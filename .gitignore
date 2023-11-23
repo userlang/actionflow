@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# 权重与数据
+weights/*.onnx
+weights/*.pth
+weights/*.pt
+data/
+*.npz
+
+# 但 mock 姿态模型要入库（28KB，让人不下载权重也能跑通流水线）
+!weights/mock-pose.onnx
+!weights/mock-pose.onnx.data
+
+# 输出
+output/
+logs/
+*.mp4
+*.avi
+
+# 但演示素材要入库（否则别人 clone 下来跑不了 demo）
+!assets/demo.mp4
+
+# IDE
+.idea/
+.vscode/
+.DS_Store

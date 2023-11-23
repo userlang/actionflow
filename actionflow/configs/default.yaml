@@ -1,0 +1,57 @@
+# ActionFlow 默认配置
+# 用法: python -m actionflow.cli infer --video demo.mp4 --config actionflow/configs/default.yaml
+
+pose:
+  onnx_path: "weights/rtmpose-m.onnx"
+  input_size: [192, 192]
+  input_mean: [0.485, 0.456, 0.406]
+  input_std: [0.229, 0.224, 0.225]
+  providers: ["CUDAExecutionProvider", "CPUExecutionProvider"]
+  keypoint_thresh: 0.3
+  color_order: "RGB"
+
+filt:
+  enabled: true
+  min_cutoff: 1.0
+  beta: 0.0            # 见 config.py 中关于 beta 的说明
+  d_cutoff: 1.0
+
+norm:
+  enabled: true
+  torso_scale: "torso"        # "torso" | "bone_median"
+  rotate_to_canonical: true
+  min_torso_length: 1.0
+
+model:
+  num_classes: 60
+  d_model: 128
+  nhead: 4
+  num_layers: 2
+  dim_feedforward: 256
+  dropout: 0.1
+  window: 32
+  num_joints: 17
+  conf_threshold: 0.3          # 低于此置信度的关键点视为漏检
+
+  # ── 模型架构 ──────────────────────────────────────────────
+  # "offline"  : 整段视频打一个标签(最简单,但不能流式)
+  # "streaming": 因果流式,逐帧输出,满足前缀不变性 ★推荐默认
+  # "boundary" : 流式 + 边界回归头,时间戳更精确
+  # "fusion"   : 骨架 + 视频双路融合(需要 GPU,参数量大)
+  arch: "streaming"
+
+  causal: false                 # 仅对 "offline" 架构有意义
+  use_boundary_head: false      # "boundary" 架构自带边界头,无需单独开
+
+decode:
+  high_threshold: 0.7
+  low_threshold: 0.4
+  min_duration: 0.3
+  use_viterbi: true
+  stay_prob: 0.9
+  switch_prob: 0.05
+  merge_gap: 0.0
+  max_boundary_adjust: 10       # 边界回归最多修正多少帧(防回归头跑飞)
+
+# 动作类别名称（按你的数据集顺序填写）
+labels: []
