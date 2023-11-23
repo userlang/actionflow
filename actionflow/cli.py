@@ -64,7 +64,9 @@ def cmd_pose(args: argparse.Namespace) -> int:
 
         if args.visualize:
             vis = frame.copy()
-            draw_skeleton(vis, kp, conf_threshold=cfg.pose.keypoint_thresh)
+            # ⚠️ 画骨架必须用**像素坐标**(process_frame 顺手存在 last_raw_pose)。
+            # kp 是归一化后的身体坐标(±2 以内),直接画会全挤在左上角。
+            draw_skeleton(vis, pipe.last_raw_pose, conf_threshold=cfg.pose.keypoint_thresh)
             if writer is None:
                 h, w = vis.shape[:2]
                 writer = cv2.VideoWriter(
@@ -166,7 +168,8 @@ def cmd_live(args: argparse.Namespace) -> int:
             buf.pop(0)
 
         vis = frame.copy()
-        draw_skeleton(vis, kp, conf_threshold=cfg.pose.keypoint_thresh)
+        # 画骨架用像素坐标,理由同 cmd_pose
+        draw_skeleton(vis, pipe.last_raw_pose, conf_threshold=cfg.pose.keypoint_thresh)
 
         if len(buf) == cfg.model.window and model is not None:
             import numpy as np

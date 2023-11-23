@@ -199,10 +199,10 @@ net = swin3d_t(weights="DEFAULT")   # 换成任意预训练视频 backbone
 
 ```bash
 # ① 从视频自动抽关键点
-python -m actionflow.data.annotate extract --video clips/a.mp4 --out data/a.npz
+python -m actionflow.data.annotate extract --video clips/s01_b.mp4 --out data/a.npz
 
 # ② 起标注界面（tkinter，macOS 自带）
-python -m actionflow.data.annotate gui --video clips/a.mp4 --npz data/a.npz \
+python -m actionflow.data.annotate gui --video clips/s01_b.mp4 --npz data/a.npz \
     --out annotations/a.json
 
 # ③ 校验标注质量（重叠/越界/类别不均衡）

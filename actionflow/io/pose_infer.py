@@ -67,6 +67,15 @@ class RTMPoseInfer:
         # 输出可能是 2 个（simcc_x, simcc_y）或 1 个（已解码）
         self._multi_output = len(self.session.get_outputs()) >= 2
 
+        # ⚠️ 输入尺寸以**模型文件**为准,不信配置。
+        #    配置默认 (192,192),但公开导出的 RTMPose-m 常见是
+        #    256x192 或 384x288 —— 尺寸对不上时,轻则关键点整体偏移
+        #    (SimCC 分布和输入网格错位),重则 ORT 直接报维度错误。
+        #    从 session 里读实际形状,配置值只作动态轴时的兜底。
+        sh, sw = self.input_shape[2], self.input_shape[3]
+        if isinstance(sh, int) and isinstance(sw, int) and sh > 0 and sw > 0:
+            self.cfg.input_size = (sw, sh)  # PoseConfig 用 (width, height)
+
     # ------------------------------------------------------------------
     def preprocess(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -108,19 +117,23 @@ class RTMPoseInfer:
             simcc_x: (B, J, W*split)   x 方向每关节一条 1D 分布
             simcc_y: (B, J, H*split)   y 方向每关节一条 1D 分布
 
-        解码方式（SimCC 的核心）:
-          1. 对分布做 softmax，得到概率
-          2. 取概率的**峰值位置**作为坐标（argmax，比期望更稳）
-          3. 置信度 = 两个方向峰值概率的**均值**
+        解码方式:
+          1. 坐标 = 原始输出的 **argmax**（argmax 对单调变换不变,
+             softmax/sigmoid 前后取 argmax 是同一个位置）
+          2. 置信度 = 两个方向**原始峰值中较小的那个**,截到 [0,1]
 
-        ⚠️ 关于置信度公式的选择:
-           常见做法是 `peak_x * peak_y`（乘积），但 SimCC 分布横跨
-           192 个 bin，softmax 后的峰值概率天然偏小（0.1~0.3），
-           再取乘积会压到 0.01~0.05，导致所有关键点的置信度都远低于
-           常用的 0.3 阈值，mask 会把全身都屏蔽掉。
+        ⚠️ 为什么不用 softmax 概率当置信度
+        -----------------------------------
+        实测公开导出(如 bukuroo/RTMPose-ONNX 的 rtmpose-m)的输出是
+        **未归一化的激活值**:分布横跨 384 个桶、形状平坦
+        (峰值 ~1.0,标准差 ~0.25)。对它做 softmax,
+        峰值概率会被摊薄到 1/384 ≈ 0.003~0.007 ——
+        于是所有关键点的置信度都远低于 0.3 阈值,
+        看起来像"100% 漏检",实际坐标却全对。
 
-           取均值可以保住峰值的量级，同时仍然要求两个方向都明确
-           （任一方向不明确时均值会被拉低）。
+        MMPose 官方部署脚本(以及 ncnn/onnx 各 demo)用的就是
+        原始峰值取小值:动作清晰时 ~0.8+,遮挡/出画时 <0.3,
+        量纲正好和阈值匹配。
         """
         sx = np.asarray(simcc_x, dtype=np.float64)
         sy = np.asarray(simcc_y, dtype=np.float64)
@@ -134,27 +147,18 @@ class RTMPoseInfer:
         coords = np.zeros((J, 2), dtype=np.float32)
         confs = np.zeros(J, dtype=np.float32)
 
-        # 数值稳定的 softmax
-        def _softmax(v: np.ndarray) -> np.ndarray:
-            v = v - v.max()
-            e = np.exp(v)
-            return e / max(e.sum(), 1e-12)
-
         for k in range(J):
-            px = _softmax(sx[k])
-            py = _softmax(sy[k])
+            ix = int(sx[k].argmax())
+            iy = int(sy[k].argmax())
 
-            ix = int(px.argmax())
-            iy = int(py.argmax())
-
-            nx = max(px.shape[0] - 1, 1)
-            ny = max(py.shape[0] - 1, 1)
+            nx = max(sx.shape[1], 1)
+            ny = max(sy.shape[1], 1)
 
             coords[k, 0] = ix / nx
             coords[k, 1] = iy / ny
 
-            # 两个方向峰值概率的均值 → 该关键点的置信度
-            confs[k] = float((px[ix] + py[iy]) / 2.0)
+            # 原始峰值取小值 → 任一方向不明确时置信度就低
+            confs[k] = float(np.clip(min(sx[k, ix], sy[k, iy]), 0.0, 1.0))
 
         return coords, confs
 

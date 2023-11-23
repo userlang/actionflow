@@ -14,7 +14,8 @@ venv/
 weights/*.onnx
 weights/*.pth
 weights/*.pt
-data/
+# ⚠️ 必须写 /data/ —— 不带斜杠的 data/ 会连源码包 actionflow/data/ 一起忽略
+/data/
 *.npz
 
 # 但 mock 姿态模型要入库（28KB，让人不下载权重也能跑通流水线）

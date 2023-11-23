@@ -72,6 +72,8 @@ class ActionFlowPipeline:
             d_cutoff=self.cfg.filt.d_cutoff,
         )
         self._labels = self.cfg.labels or []
+        # process_frame 每帧更新:滤波后、归一化前的**像素坐标**骨架
+        self.last_raw_pose: np.ndarray | None = None
 
     # ------------------------------------------------------------------
     @property
@@ -90,11 +92,20 @@ class ActionFlowPipeline:
             frame: (H, W, 3) BGR
         Returns:
             (17, 3) 归一化后的关键点
+
+        副作用
+        ------
+        把「滤波后、归一化前」的**像素坐标**存到 ``self.last_raw_pose``。
+        画骨架到画面上必须用像素坐标 —— 归一化后的数值在 ±2 之间,
+        int() 之后全挤在画面左上角 (0,0)。可视化路径直接读这个字段,
+        不必为了一幅干净的画面把姿态模型跑两遍。
         """
         kp = self.pose(frame)
 
         if self.cfg.filt.enabled:
             kp = self._filter(kp, dt=dt)
+
+        self.last_raw_pose = kp
 
         if self.cfg.norm.enabled:
             kp = normalize_keypoints(
@@ -116,7 +127,8 @@ class ActionFlowPipeline:
         提取整段视频的骨架序列。
 
         Returns:
-            (T, 17, 3) 归一化后的骨架
+            (T, 17, 3) 骨架;cfg.norm.enabled 时为身体坐标,
+            关闭时为原图像素坐标(标注工具链走这条)。
         """
         src = source if isinstance(source, VideoSource) else open_source(source)
         dt = 1.0 / max(src.fps, 1e-6)

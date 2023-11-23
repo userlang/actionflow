@@ -39,12 +39,12 @@ def test_action_annotation_roundtrip() -> None:
 def test_video_annotation_roundtrip() -> None:
     """视频标注的存取往返。"""
     v = VideoAnnotation(
-        video="a.mp4", fps=25.0, num_frames=100,
+        video="s01_b.mp4", fps=25.0, num_frames=100,
         actions=[ActionAnnotation("站立", 0, 30), ActionAnnotation("抬手", 30, 100)],
         keypoints="a.npz",
     )
     v2 = VideoAnnotation.from_dict(v.to_dict())
-    assert v2.video == "a.mp4" and v2.fps == 25.0 and v2.num_frames == 100
+    assert v2.video == "s01_b.mp4" and v2.fps == 25.0 and v2.num_frames == 100
     assert len(v2.actions) == 2
     assert v2.actions[1].label == "抬手"
     assert v2.keypoints == "a.npz"
@@ -56,7 +56,7 @@ def test_video_annotation_roundtrip() -> None:
 def test_validate_detects_overlap() -> None:
     """重叠的动作段要被发现。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=100,
+        video="s01_b.mp4", num_frames=100,
         actions=[ActionAnnotation("A", 0, 50), ActionAnnotation("B", 40, 80)],
     )
     problems = v.validate()
@@ -66,7 +66,7 @@ def test_validate_detects_overlap() -> None:
 def test_validate_detects_out_of_bounds() -> None:
     """越界的动作段要被发现。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=50,
+        video="s01_b.mp4", num_frames=50,
         actions=[ActionAnnotation("A", 0, 100)],
     )
     problems = v.validate()
@@ -76,7 +76,7 @@ def test_validate_detects_out_of_bounds() -> None:
 def test_validate_detects_negative_length() -> None:
     """长度非法的段要被发现。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=100,
+        video="s01_b.mp4", num_frames=100,
         actions=[ActionAnnotation("A", 50, 30)],
     )
     problems = v.validate()
@@ -86,7 +86,7 @@ def test_validate_detects_negative_length() -> None:
 def test_validate_accepts_good_annotation() -> None:
     """正常的标注不该报问题。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=100,
+        video="s01_b.mp4", num_frames=100,
         actions=[ActionAnnotation("A", 0, 30), ActionAnnotation("B", 30, 70),
                  ActionAnnotation("A", 70, 100)],
     )
@@ -96,7 +96,7 @@ def test_validate_accepts_good_annotation() -> None:
 def test_validate_allows_gap_between_segments() -> None:
     """段与段之间留空隙是允许的(那部分可能是"无动作")。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=100,
+        video="s01_b.mp4", num_frames=100,
         actions=[ActionAnnotation("A", 0, 30), ActionAnnotation("B", 50, 80)],
     )
     assert v.validate() == []
@@ -108,7 +108,7 @@ def test_validate_allows_gap_between_segments() -> None:
 def test_save_and_load_annotations() -> None:
     """保存再读回来应该一致。"""
     v = VideoAnnotation(
-        video="a.mp4", fps=30.0, num_frames=100,
+        video="s01_b.mp4", fps=30.0, num_frames=100,
         actions=[ActionAnnotation("站立", 0, 30), ActionAnnotation("抬手", 30, 100)],
     )
     with tempfile.TemporaryDirectory() as tmp:
@@ -125,7 +125,7 @@ def test_save_and_load_annotations() -> None:
 def test_save_annotations_collects_labels() -> None:
     """标签表要自动汇总。"""
     vs = [
-        VideoAnnotation(video="a.mp4", actions=[ActionAnnotation("X", 0, 10)]),
+        VideoAnnotation(video="s01_b.mp4", actions=[ActionAnnotation("X", 0, 10)]),
         VideoAnnotation(video="b.mp4", actions=[ActionAnnotation("Y", 0, 10)]),
     ]
     with tempfile.TemporaryDirectory() as tmp:
@@ -144,7 +144,7 @@ def test_save_annotations_collects_labels() -> None:
 def test_validate_dataset_reports_counts() -> None:
     """校验报告要统计出视频数、段数、类别数。"""
     vs = [
-        VideoAnnotation(video="a.mp4", num_frames=100,
+        VideoAnnotation(video="s01_b.mp4", num_frames=100,
                         actions=[ActionAnnotation("A", 0, 50), ActionAnnotation("B", 50, 100)]),
         VideoAnnotation(video="b.mp4", num_frames=100,
                         actions=[ActionAnnotation("A", 0, 100)]),
@@ -186,7 +186,7 @@ def test_validate_dataset_warns_on_imbalance() -> None:
 def test_validate_dataset_warns_on_few_samples() -> None:
     """某类别样本太少要警告。"""
     vs = [
-        VideoAnnotation(video="a.mp4", num_frames=10,
+        VideoAnnotation(video="s01_b.mp4", num_frames=10,
                         actions=[ActionAnnotation("A", 0, 10)]),
         VideoAnnotation(video="b.mp4", num_frames=10,
                         actions=[ActionAnnotation("B", 0, 10)]),
@@ -203,7 +203,7 @@ def test_validate_dataset_warns_on_few_samples() -> None:
 def test_validate_dataset_detects_missing_npz() -> None:
     """声明了关键点但文件不存在,要报错。"""
     vs = [
-        VideoAnnotation(video="a.mp4", num_frames=100, keypoints="missing.npz",
+        VideoAnnotation(video="s01_b.mp4", num_frames=100, keypoints="missing.npz",
                         actions=[ActionAnnotation("A", 0, 100)]),
     ]
     with tempfile.TemporaryDirectory() as tmp:
@@ -220,7 +220,7 @@ def test_validate_dataset_detects_missing_npz() -> None:
 def test_validate_dataset_detects_bad_npz_shape() -> None:
     """关键点形状不对要报错。"""
     vs = [
-        VideoAnnotation(video="a.mp4", num_frames=100, keypoints="bad.npz",
+        VideoAnnotation(video="s01_b.mp4", num_frames=100, keypoints="bad.npz",
                         actions=[ActionAnnotation("A", 0, 100)]),
     ]
     with tempfile.TemporaryDirectory() as tmp:
@@ -241,7 +241,7 @@ def test_validate_dataset_detects_bad_npz_shape() -> None:
 def test_export_creates_windows() -> None:
     """导出应该按窗口切成 npz。"""
     v = VideoAnnotation(
-        video="a.mp4", fps=30.0, num_frames=200, keypoints="a.npz",
+        video="s01_b.mp4", fps=30.0, num_frames=200, keypoints="a.npz",
         actions=[ActionAnnotation("A", 0, 100)],
     )
     with tempfile.TemporaryDirectory() as tmp:
@@ -261,7 +261,7 @@ def test_export_creates_windows() -> None:
 def test_export_windows_have_correct_shape() -> None:
     """导出的窗口形状应该是 (window, 17, 3)。"""
     v = VideoAnnotation(
-        video="a.mp4", num_frames=100, keypoints="a.npz",
+        video="s01_b.mp4", num_frames=100, keypoints="a.npz",
         actions=[ActionAnnotation("A", 0, 100)],
     )
     with tempfile.TemporaryDirectory() as tmp:
@@ -279,7 +279,7 @@ def test_export_windows_have_correct_shape() -> None:
 
 def test_export_skips_videos_without_keypoints() -> None:
     """没有关键点的视频要跳过(而不是崩掉)。"""
-    v = VideoAnnotation(video="a.mp4", num_frames=100,
+    v = VideoAnnotation(video="s01_b.mp4", num_frames=100,
                         actions=[ActionAnnotation("A", 0, 100)])
     with tempfile.TemporaryDirectory() as tmp:
         stats = export_to_npz_dataset(
@@ -296,7 +296,7 @@ def test_export_respects_action_boundaries() -> None:
     跨界的窗口标签就有歧义了(到底算前一个动作还是后一个)。
     """
     v = VideoAnnotation(
-        video="a.mp4", num_frames=200, keypoints="a.npz",
+        video="s01_b.mp4", num_frames=200, keypoints="a.npz",
         actions=[ActionAnnotation("A", 0, 50), ActionAnnotation("B", 100, 200)],
     )
     with tempfile.TemporaryDirectory() as tmp:
