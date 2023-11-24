@@ -194,26 +194,116 @@ net = swin3d_t(weights="DEFAULT")   # 换成任意预训练视频 backbone
 3. **场景不匹配** —— NTU 是实验室固定机位，真实场景各种角度各种光照
 
 所以必须自建。工具支持**关键点辅助标注**：
-先用 RTMPose 自动抽关键点，人只做少量修正（拖动标错的点、标类别和起止帧）。
+先用 RTMPose 自动抽关键点，人只做少量修正（看画面核对骨架、标类别和起止帧）。
 标一段 5 秒视频，从 30 分钟降到 5 分钟。
 
-```bash
-# ① 从视频自动抽关键点
-python -m actionflow.data.annotate extract --video clips/s01_b.mp4 --out data/a.npz
+> 前置：`weights/rtmpose-m.onnx` 需自行下载（COCO-17 人体版，
+> 如 [bukuroo/RTMPose-ONNX](https://huggingface.co/bukuroo/RTMPose-ONNX) 的 `rtmpose-m.onnx`），
+> 仓库自带的 `mock-pose.onnx` 只用于跑通流程，识别结果是假的。
+> GUI 需要 pillow：`pip install -e ".[gui]"`。
 
-# ② 起标注界面（tkinter，macOS 自带）
-python -m actionflow.data.annotate gui --video clips/s01_b.mp4 --npz data/a.npz \
-    --out annotations/a.json
+### 数据怎么放（目录约定）
 
-# ③ 校验标注质量（重叠/越界/类别不均衡）
-python -m actionflow.data.annotate validate --annotations annotations/ --npz-dir data/
-
-# ④ 导出成训练用的 npz 切片
-python -m actionflow.data.annotate export --annotations annotations/ --npz-dir data/ \
-    --out data/windows/
+```
+data/
+├── clips/          ← 原始视频,命名 <人号>_<编号>.mp4,如 s01_a.mp4
+├── npz/            ← extract 生成:每条视频的关键点 (T,17,3) 像素坐标
+├── annotations/    ← GUI/cli 生成:每条视频的动作段标注 JSON
+├── windows/        ← export 生成:训练用 32 帧窗口切片
+├── labels.json     ← 标签 → id 映射(自动生成)
+└── splits/         ← train.txt / test.txt,按人划分(自动生成)
 ```
 
-GUI 快捷键：`空格` 播放/暂停 · `←/→` 逐帧 · `A/D` 加/减关键点 · `Enter` 标记段起点 · `N` 下一段 · `Delete` 删除当前段 · `Ctrl+S` 保存 · `Ctrl+Q` 退出
+⚠️ 视频命名里下划线前的 `s01` 会被当作「受试者编号」——训练/测试**按人切分**，
+同一个人的片段不能同时出现在两边，否则精度虚高。
+
+### 录制建议
+
+- 每个动作做 **3 秒左右**（≥2 秒 / 48 帧，否则切不出完整窗口），段间回立正停 1 秒
+- 一条视频排 6~12 个动作段，时长 45~60 秒
+- 每人每天 1 条，攒 5~10 条再开始训练；多人比单人多录有用得多
+- 全身入镜（含踢腿类动作时脚不能被裁），背景干净，固定 30fps
+
+### 完整工作流（五步）
+
+```bash
+# ① 抽关键点:每个视频一条命令(几秒的视频 CPU 上约 1~2 分钟)
+python -m actionflow.data.annotate_cli extract \
+    --video data/clips/s01_a.mp4 --out data/npz/s01_a.npz
+
+# ② 起标注界面(tkinter,macOS 自带;--labels 用逗号分隔候选标签)
+python -m actionflow.data.annotate_cli gui \
+    --video data/clips/s01_a.mp4 --npz data/npz/s01_a.npz \
+    --out data/annotations/s01_a.json \
+    --labels 左举手,右举手,胸前摆动,左踢腿,右踢腿,左敬礼,右敬礼
+
+# ③ 校验标注质量(段重叠/越界/关键点缺失)
+python -m actionflow.data.annotate_cli validate \
+    --annotations data/annotations --npz-dir data/npz
+
+# ④ 导出成训练用的 32 帧窗口切片
+python -m actionflow.data.annotate_cli export \
+    --annotations data/annotations --npz-dir data/npz --out data/windows
+
+# ⑤ 生成标签表 + 按人划分训练/测试集
+python -c "from actionflow.data.annotated import build_label_map, build_split
+build_label_map('data/windows', 'data/labels.json')
+build_split('data/windows', 'data/splits')"
+```
+
+不想开 GUI 也可以纯键盘标注（格式 `<标签> <起始帧> <结束帧>`，空行结束）：
+
+```bash
+python -m actionflow.data.annotate_cli cli \
+    --video data/clips/s01_a.mp4 --npz data/npz/s01_a.npz \
+    --out data/annotations/s01_a.json
+# > 左举手 30 105
+# > 右举手 135 210
+# > (空行结束)
+```
+
+### GUI 快捷键
+
+| 键 | 作用 |
+|---|---|
+| `空格` | 播放 / 暂停 |
+| `←` `→` | 上一帧 / 下一帧（`Shift+←/→` 跳 10 帧） |
+| `Home` / `End` | 跳到开头 / 结尾 |
+| `A` | 把当前帧设为**动作段起点** |
+| `D` | 把当前帧设为**终点**并保存这一段（未设起点时先设起点） |
+| `L` | 在候选标签里循环切换（也可用右下角下拉框直接选） |
+| `Enter` | 保存当前段 |
+| `Delete` | 删除列表中选中的段 |
+| `Ctrl+S` | 保存标注文件（中途退出前先按这个，下次打开自动续标） |
+| `Ctrl+Q` | 退出 |
+
+标注要点：起点 = 肢体离开身侧的第一帧，终点 = 完全放回/落地的最后一帧，
+前后的静止段不要圈进来；画面上叠加的骨架线用来核对左右手（面对镜头时，
+**你的左手在画面右边**）。
+
+### 训练
+
+```bash
+python -m actionflow.train \
+    --data data/windows --dataset-type annotated \
+    --annotations data/annotations --labels-json data/labels.json \
+    --splits data/splits \
+    --arch streaming --epochs 60 --lr 1e-3 --batch-size 16 \
+    --out weights/my_action.pth
+```
+
+- 自建小数据集务必 `--lr 1e-3`（默认 1e-4 收敛极慢）
+- 只有一两个人时按人划分会得到空测试集，训练会自动退回随机留出 20% 并打警告——
+  此时的准确率只反映"记住了这几个人"，不代表换人也认得出
+- 想要更准的动作起止时间戳，换 `--arch boundary`（`--boundary-weight` 默认 0.1，别调大，会压死分类收敛）
+
+### 推理与导出
+
+```bash
+python -m actionflow.cli infer --video data/clips/s01_c.mp4 --model weights/my_action.pth --out result.json
+python -m actionflow.cli live --device 0 --model weights/my_action.pth   # 摄像头实时
+python -m actionflow.export --model weights/my_action.pth --out weights/my_action.onnx
+```
 
 
 ---
