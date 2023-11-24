@@ -35,6 +35,9 @@ train = [
     "torch>=1.13",
     "pyyaml>=6.0",
 ]
+gui = [
+    "pillow>=9.0",   # 标注 GUI 把 OpenCV 帧转成 tkinter 可显示的图像
+]
 dev = [
     "pytest>=7.0",
     "ruff>=0.1",
@@ -43,6 +46,7 @@ dev = [
 all = [
     "torch>=1.13",
     "pyyaml>=6.0",
+    "pillow>=9.0",
     "pytest>=7.0",
 ]
 

@@ -98,7 +98,10 @@ class AnnotationGUI:
 
     # ------------------------------------------------------------------
     def _build_ui(self) -> None:
-        tk = self.tk
+        import tkinter as tk
+        from tkinter import ttk
+
+        self.ttk = ttk
         self.root = tk.Tk()
         self.root.title(f"ActionFlow 标注工具 — {Path(self.video).name}")
         self.root.configure(bg="#1a1a1a")
@@ -128,11 +131,17 @@ class AnnotationGUI:
         lbl_frame = tk.Frame(bottom, bg="#1a1a1a")
         lbl_frame.pack(side=tk.RIGHT)
         tk.Label(lbl_frame, text="标签:", bg="#1a1a1a", fg="#ffffff").pack(side=tk.LEFT)
-        self.label_combo = tk.Combobox(
+        # ⚠️ Combobox 属于 tkinter.ttk,不在 tkinter 顶层 —— 写成
+        #    tk.Combobox 会报 AttributeError: module 'tkinter' has no attribute 'Combobox'。
+        #    ttk.Combobox 也不接受 bg/fg 参数(主题样式管颜色),传了同样报错。
+        #    state=readonly: 禁止手输,防止焦点在下拉框时把 A/D/空格敲进输入框。
+        self.label_combo = ttk.Combobox(
             lbl_frame, textvariable=self.label_var, values=self.labels or [],
-            width=18, bg="#333333", fg="#ffffff",
+            width=18, state="readonly",
         )
         self.label_combo.pack(side=tk.LEFT, padx=4)
+        # 下拉框选完标签后刷新状态栏显示
+        self.label_combo.bind("<<ComboboxSelected>>", lambda e: self._update_status())
 
         # 动作段列表
         self.seg_list = tk.Listbox(self.root, bg="#1a1a1a", fg="#ffffff", height=6)
@@ -165,6 +174,8 @@ class AnnotationGUI:
         self.root.bind("<End>", lambda e: self._goto(self.total - 1))
         self.root.bind("a", lambda e: self._set_start())
         self.root.bind("d", lambda e: self._set_end())
+        # ⚠️ 文件头 docstring 承诺了 L 键循环切换标签,但此前并没有这个绑定。
+        self.root.bind("l", lambda e: self._cycle_label())
         self.root.bind("<Return>", lambda e: self._save_segment())
         self.root.bind("n", lambda e: self._set_start())
         self.root.bind("<Delete>", lambda e: self._delete_segment())
@@ -249,7 +260,8 @@ class AnnotationGUI:
         parts = [
             f"帧 {self.frame_idx}/{self.total - 1}",
             f"  时间 {t:.2f}s",
-            f"  标签 {self.pending_label}",
+            # 当前标签以 label_var 为准(下拉框/L 键改的都是它)
+            f"  标签 {self.label_var.get()}",
         ]
         if self.pending_start is not None:
             parts.append(f"  起点 {self.pending_start}")
@@ -300,6 +312,16 @@ class AnnotationGUI:
             return
         self._save_segment()
 
+    def _cycle_label(self) -> None:
+        """L 键:在候选标签里循环。"""
+        if not self.labels:
+            return
+        try:
+            i = self.labels.index(self.label_var.get())
+        except ValueError:
+            i = -1
+        self.label_var.set(self.labels[(i + 1) % len(self.labels)])
+
     def _save_segment(self) -> None:
         if self.pending_start is None:
             self.pending_start = self.frame_idx
@@ -308,9 +330,13 @@ class AnnotationGUI:
         s, e = sorted([self.pending_start, self.frame_idx])
         if e <= s:
             return
-        self.segments.append(
-            ActionAnnotation(label=self.pending_label, start_frame=s, end_frame=e)
-        )
+        # ⚠️ 标签以 label_var(下拉框绑定的变量)为准。
+        #    此前这里读 self.pending_label —— 那是个独立状态,
+        #    用户从下拉框选标签只会改 label_var,pending_label 不会跟着变,
+        #    导致"选了标签,存的还是旧标签"。
+        label = self.label_var.get() or self.pending_label
+        self.segments.append(ActionAnnotation(label=label, start_frame=s, end_frame=e))
+        self.pending_label = label
         self.pending_start = None
         self._refresh_list()
         self._update_status()

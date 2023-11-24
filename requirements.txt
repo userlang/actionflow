@@ -7,5 +7,8 @@ onnxruntime>=1.12
 # torch>=1.13
 # pyyaml>=6.0
 
+# 标注 GUI 必需
+# pillow>=9.0
+
 # 开发
 # pytest>=7.0
