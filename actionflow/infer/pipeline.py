@@ -188,19 +188,57 @@ class ActionFlowPipeline:
             raise RuntimeError("未加载分类器模型，无法执行分类")
 
         self.model.eval()
+
+        # ⚠️ 必须滑窗切片,不能整段视频一次喂进去。
+        #    模型的时间嵌入是 nn.Embedding(max_window),训练时 T 恒为
+        #    window(32);整段视频动辄上千帧,torch.arange(T) 直接
+        #    IndexError: index out of range。推理按训练同款窗口滑,
+        #    重叠区取平均 —— 流式架构有前缀不变性,这样拼是合法的。
+        T_total = poses.shape[0]
+        win = int(self.cfg.model.window)
+        stride = max(win // 2, 1)
+        starts = list(range(0, max(T_total - win, 0) + 1, stride)) or [0]
+
+        probs_sum: np.ndarray | None = None
+        boundary_sum: np.ndarray | None = None
+        count = np.zeros(T_total, dtype=np.float64)
+
         with torch.no_grad():
-            skel = torch.from_numpy(poses).float().unsqueeze(0)  # (1, T, J, 3)
+            for s in starts:
+                seg = poses[s : s + win]
+                n = seg.shape[0]  # 实际覆盖的帧数(末窗可能不足)
+                if n < win:
+                    # 不足一窗时补最后一帧,与训练侧 windowize 的补齐方式一致
+                    pad = np.repeat(seg[-1:], win - n, axis=0)
+                    seg = np.concatenate([seg, pad], axis=0)
+                skel = torch.from_numpy(np.ascontiguousarray(seg)).float().unsqueeze(0)
 
-            # 带边界头的模型返回两个值,普通模型返回一个
-            out = self.model.forward_probs(skel)
-            if isinstance(out, tuple):
-                probs, boundary = out
-                boundary_np = boundary[0].cpu().numpy() if boundary is not None else None
-            else:
-                probs = out
-                boundary_np = None
+                # 带边界头的模型返回两个值,普通模型返回一个
+                out = self.model.forward_probs(skel)
+                if isinstance(out, tuple):
+                    p, b = out
+                    p_np = p[0].cpu().numpy()
+                    b_np = b[0].cpu().numpy() if b is not None else None
+                else:
+                    p_np = out[0].cpu().numpy()
+                    b_np = None
 
-        return probs[0].cpu().numpy(), boundary_np
+                if probs_sum is None:
+                    probs_sum = np.zeros((T_total, p_np.shape[1]), dtype=np.float64)
+                probs_sum[s : s + n] += p_np[:n]
+                if b_np is not None:
+                    if boundary_sum is None:
+                        boundary_sum = np.zeros((T_total, b_np.shape[1]), dtype=np.float64)
+                    boundary_sum[s : s + n] += b_np[:n]
+                count[s : s + n] += 1
+
+        probs = probs_sum / np.maximum(count[:, None], 1.0)
+        boundary_np = (
+            boundary_sum / np.maximum(count[:, None], 1.0)
+            if boundary_sum is not None
+            else None
+        )
+        return probs.astype(np.float32), boundary_np
 
     # ------------------------------------------------------------------
     def decode(

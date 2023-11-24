@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, is_dataclass
 from pathlib import Path
 from typing import Any
 
@@ -137,7 +137,11 @@ class ActionFlowConfig:
             if not hasattr(cfg, key):
                 continue
             sub = getattr(cfg, key)
-            if isinstance(sub, dataclass) and isinstance(value, dict):
+            # ⚠️ 判断"是不是 dataclass"要用 is_dataclass()。
+            #    isinstance(sub, dataclass) 是错的 —— dataclass 是装饰器
+            #    不是类型,这条路径(从 checkpoint 的 config.json 恢复配置)
+            #    一执行就 TypeError。测试没覆盖到加载配置这条路,漏网了。
+            if is_dataclass(sub) and isinstance(value, dict):
                 for k2, v2 in value.items():
                     if hasattr(sub, k2):
                         setattr(sub, k2, v2)
