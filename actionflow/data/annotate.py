@@ -265,6 +265,11 @@ def load_annotations(in_path: str | Path) -> tuple[list[VideoAnnotation], list[s
     """
     读取标注。
 
+    ⚠️ ``in_path`` 既可以是**单个 JSON 文件**,也可以是**目录**。
+    给目录时合并目录下所有 ``*.json``(每条视频一个标注文件的约定)。
+    此前只接受文件,而 ``annotate_cli export`` 传进来的是目录 ——
+    直接 ``IsADirectoryError`` 崩溃,导出这步根本走不通。
+
     Returns
     -------
     (videos, labels)
@@ -272,6 +277,15 @@ def load_annotations(in_path: str | Path) -> tuple[list[VideoAnnotation], list[s
         labels:  出现过的所有标签名
     """
     in_path = Path(in_path)
+    if in_path.is_dir():
+        videos: list[VideoAnnotation] = []
+        label_set: set[str] = set()
+        for p in sorted(in_path.glob("*.json")):
+            vs, ls = load_annotations(p)
+            videos.extend(vs)
+            label_set.update(ls)
+        return videos, sorted(label_set)
+
     payload = json.loads(in_path.read_text(encoding="utf-8"))
 
     videos = [VideoAnnotation.from_dict(d) for d in payload.get("videos", [])]
@@ -458,11 +472,11 @@ def export_to_npz_dataset(
     stats = {"num_windows": 0, "num_skipped": 0, "label_counts": {}}
 
     for v in annotations:
-        if not v.keypoints:
-            stats["num_skipped"] += 1
-            continue
-
-        kp_path = npz_dir / Path(v.keypoints).name
+        # 优先用标注里显式记的 keypoints 文件名;
+        # 缺失时兜底:用视频文件名去 npz 目录找同名 .npz。
+        # (早期版本的 GUI 存出的 JSON 里 keypoints=None,靠这里救回)
+        kp_name = Path(v.keypoints).name if v.keypoints else Path(v.video).stem + ".npz"
+        kp_path = npz_dir / kp_name
         if not kp_path.exists():
             stats["num_skipped"] += 1
             continue

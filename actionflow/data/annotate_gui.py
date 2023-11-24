@@ -86,6 +86,11 @@ class AnnotationGUI:
 
         # ── 标注状态 ────────────────────────────────────────────
         self.annotation = VideoAnnotation(video=str(video), fps=self.fps, num_frames=self.total)
+        # ⚠️ 必须把关键点文件名写进标注 —— export 靠它找 npz。
+        #    此前漏了这一步,GUI 存出的 JSON keypoints=None,
+        #    导出时全部被当成"没有关键点的视频"跳过。
+        if npz_path:
+            self.annotation.keypoints = Path(npz_path).name
         self.segments: list[ActionAnnotation] = []
         self.pending_start: int | None = None
         self.pending_label: str = self.labels[0] if self.labels else "action"
