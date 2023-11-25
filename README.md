@@ -4,27 +4,41 @@
 
 **端侧流式人体原子动作识别引擎**
 
-`一段真人视频 → 带精确时间戳的结构化动作序列`
+### `一段真人视频 → 带精确时间戳的结构化动作序列`
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg?logo=python&logoColor=white)](pyproject.toml)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange.svg?logo=pytorch&logoColor=white)](pyproject.toml)
+[![NumPy](https://img.shields.io/badge/NumPy-≥1.21-blue.svg?logo=numpy&logoColor=white)](pyproject.toml)
+[![OpenCV](https://img.shields.io/badge/OpenCV-≥4.5-green.svg?logo=opencv&logoColor=white)](pyproject.toml)
+[![ONNX](https://img.shields.io/badge/ONNX-Runtime-black.svg?logo=onnx&logoColor=white)](https://onnxruntime.ai/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache&logoColor=white)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-124%2F124%20passing-brightgreen.svg)](tests/)
-[![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg)](.github/workflows/ci.yml)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+---
+
+### 核心技术栈与算法
+
+[![RTMPose](https://img.shields.io/badge/pose-RTMPose-blue.svg?logo=mmpose&logoColor=white)](https://arxiv.org/abs/2303.05499)
+[![SimCC](https://img.shields.io/badge/pose-SimCC-blue.svg?logo=mmpose&logoColor=white)](https://arxiv.org/abs/2108.07936)
+[![One-Euro](https://img.shields.io/badge/filter-One%20Euro%20Filter-teal.svg)](https://dl.acm.org/doi/10.1145/2207673.2208636)
+[![Transformer](https://img.shields.io/badge/model-Transformer-orange.svg?logo=transformers&logoColor=white)](https://arxiv.org/abs/1706.03762)
+[![Causal](https://img.shields.io/badge/model-Causal%20Mask-orange.svg?logo=pytorch&logoColor=white)](actionflow/models/streaming.py)
+[![CrossAttention](https://img.shields.io/badge/model-Cross%20Attention-orange.svg?logo=pytorch&logoColor=white)](actionflow/models/fusion.py)
+[![Viterbi](https://img.shields.io/badge/decode-Viterbi-purple.svg)](https://ieeexplore.ieee.org/document/433255)
+[![Hysteresis](https://img.shields.io/badge/decode-Hysteresis-purple.svg)](https://ieeexplore.ieee.org/document/376740)
+[![ActionFormer](https://img.shields.io/badge/decode-Boundary%20Regression-purple.svg)](https://arxiv.org/abs/2208.05374)
 
 </div>
 
 ---
 
-## 它解决什么问题
+## 这是什么
 
-市面上的动作识别项目，几乎都是同一个模子：**给一整段视频，输出一个标签。**
+ActionFlow 是一个**端侧可跑的流式人体动作识别引擎**。
 
-```
-[0.0s - 30.0s] 有人在吃饭
-```
-
-这对**视频检索**够用了，对**端侧行为理解**完全不够。端侧场景真正需要的是这个：
+输入一段真人视频（或摄像头实时流），它输出的不是「这段视频是吃饭」这样一个标签，
+而是**一串带精确起止时间戳的动作序列**：
 
 ```json
 [
@@ -34,18 +48,21 @@
 ]
 ```
 
-差别不在「用了什么模型」，而在**四个维度的缺口**：
+这个输出形态是**端侧行为理解**的基础 —— 它能直接喂给上层应用去做告警、
+交互触发、康复训练评估、跌倒检测这类需要「**什么时候发生了什么**」的场景。
 
-| 维度 | 现状 | 缺口 |
+### 三个层次的定位
+
+| 层次 | 做的事 | 典型场景 |
 |---|---|---|
-| **粒度** | 「吃饭」「打电话」是**复合**动作，一个标签盖住几十个子动作 | 需要**原子动作**：「左举手」「右踢腿」 |
-| **时间** | 只有片段级标签，边界由网络回归得到，误差常在数十帧 | 需要**帧级**时间戳，精确到「第几帧到第几帧」 |
-| **场景** | NTU RGB+D 是实验室固定机位、蓝背景、穿紧身衣 | 需要**自建数据集**：自己的动作、自己的场景 |
-| **部署** | 视频大模型动辄数亿参数，必须云端 GPU | 需要**端侧可跑**：0.29M 参数，CPU 实时 |
+| **流式** | 边来帧边出结果，已输出的结论不会被后来的帧改写 | 摄像头实时、直播流 |
+| **原子动作** | 识别「左举手」「右踢腿」这种基本动作，而不是「吃饭」这种复合行为 | 人机交互、行为监测 |
+| **帧级时间戳** | 每个动作的起止精确到「第几帧到第几帧」 | 需要时间对齐的下游任务 |
 
-### ActionFlow 的答案：三层解耦
+### 和常规动作识别项目的区别
 
-不是「设计一个更强的端到端模型」，而是**把问题拆成三个可以各自做好的子问题**：
+常规动作识别项目大多止步于「整段视频 → 一个标签」。
+ActionFlow 把这件事拆成三层，每层各自解决一个明确的问题：
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -56,10 +73,10 @@
 └─────────────────────────────────────────────────────────────────┘
                           ↓ 骨架流 [T, 17, 3]
 ┌─────────────────────────────────────────────────────────────────┐
-│  Layer 2   动作分类   Action Recognition      ★ 核心            │
+│  Layer 2   动作分类   Action Recognition                         │
 │            关节 Embedding + 时间位置编码                        │
 │            nn.TransformerEncoder (2 层, d=128)                  │
-│            因果注意力掩码 → 真正的流式，前缀不变性实测 0.0        │
+│            因果注意力掩码 → 前缀不变性实测 0.0                   │
 │            Key-Padding Mask → 处理关键点漏检                     │
 └─────────────────────────────────────────────────────────────────┘
                           ↓ 逐帧概率 [T, C] + 边界距离 [T, 2]
@@ -77,15 +94,13 @@
 **②③ 缺一不可**：只有 ①②，你知道每帧是什么，但输出是碎帧、没有时间戳；
 只有 ①③，你能切出段，但不知道每段是什么动作。
 
-### 用到的算法与论文出处
-
-每一层都不是「拍脑袋写的」，而是明确对应到已有文献里的成熟方法：
+### 算法与论文出处
 
 | 层 | 算法 | 解决的问题 | 出处 |
 |---|---|---|---|
 | Layer 1 | **RTMPose** + SimCC | 从像素定位 17 个关节 | [RTMPose, ICCV 2023](https://arxiv.org/abs/2303.05499) / [SimCC, ICCV 2021](https://arxiv.org/abs/2108.07936) |
 | Layer 1 | **One-Euro Filter** | 检测抖动让骨长特征剧烈变化 | [Casiez et al., CHI 2012](https://dl.acm.org/doi/10.1145/2207673.2208636) |
-| Layer 1 | 身体坐标系归一化 | 位置 / 体型 / 朝向不应影响动作语义 | 几何先验（本项目自实现） |
+| Layer 1 | 身体坐标系归一化 | 位置 / 体型 / 朝向不应影响动作语义 | 几何先验 |
 | Layer 2 | **Self-Attention / Transformer** | 建模任意两个关节、任意两个时刻的关系 | [Vaswani et al., NeurIPS 2017](https://arxiv.org/abs/1706.03762) |
 | Layer 2 | **因果注意力掩码** | 实时流里已输出的结果不能被后来的帧改写 | Transformer decoder mask（Vaswani 2017） |
 | Layer 2 | **Key-Padding Mask** | 低置信度关节不应污染判断 | 标准 attention masking |
@@ -99,51 +114,7 @@
 > **完整算法对比、选型依据、以及「为什么不用 ST-GCN / 视频大模型」的讨论**
 > 见 [`docs/technical-plan.html`](docs/technical-plan.html)。
 
-### 三个「自己写出来」的部分
-
-整个项目里真正属于本仓库实现的是这三块，也是一个流式动作识别引擎的骨架：
-
-**① 因果注意力掩码** —— 普通 Transformer 是「上帝视角」，第 3 帧能看到第 8 帧。
-离线视频里这没问题，**实时流里是致命的**：用户已经看到的结果会因新帧到达而偷偷改变。
-本项目让每个 token 只能看「不晚于自己」的 token，并为此建立了一条硬验收标准：
-
-```
-「用前 t 帧算出的结果」必须和「用前 t+100 帧算出的前 t 帧」逐位相同
-实测差异：streaming = 0.0（完全相同）
-```
-
-有个坑值得记下来：**掩码必须按帧号算，不能按 token 号算**。
-按 token 号做下三角掩码，会让同一帧内的 17 个关节互相看不见 —— 左手腕看不到左手肩，这在物理上说不通。
-
-**② 解码层三件套** —— 逐帧独立分类会产生三类错误，三个算法各治一种：
-
-```
-Viterbi 动态规划  → 治「孤立误判」（全局最优路径）
-Hysteresis 双阈值 → 治「段被切断」（迟滞回环，同 Canny 边缘检测）
-最小时长约束      → 治「假阳性段」（人不会做 0.03 秒的动作）
-```
-
-多数开源动作识别项目只做到 Layer 2 就停了，直接把 argmax 当输出，边界全是碎的。
-
-**③ 边界回归头 + 中位数消歧** —— 换了个问法来定位边界：
-
-| | 问题 | 性质 |
-|---|---|---|
-| 分类头 | 「这一帧是**什么**动作？」 | 离散、粗糙 |
-| 边界回归头 | 「这一帧距**最近的边界**还有几帧？」 | 连续、精细 |
-
-修正时**不信门口那一帧**（边界帧天然有歧义），而是看段内所有帧的预测取中位数。
-
-### 除了算法，还有完整的数据闭环
-
-公开数据集解决不了这个问题（NTU 没有「原子动作」粒度、没有边界标注、场景也不匹配），
-所以本仓库提供**从录制到训练的全套工具**：自动抽关键点 → GUI 标注 → 质量校验 →
-导出训练窗口 → 按人划分 → 训练 → 段级评估。
-
-**这套工具链和数据制作规范，才是本项目相对同类仓库真正拉开差距的地方。**
-→ 完整流程见下方 [Step 0 ~ Step 11](#完整数据到模型工作流)
-
-### 效果与成本
+### 工程指标
 
 | 指标 | 实测 |
 |---|---|
@@ -155,11 +126,22 @@ Hysteresis 双阈值 → 治「段被切断」（迟滞回环，同 Canny 边缘
 > 端侧部署的真正瓶颈是**姿态提取**（RTMPose，54MB），不是分类器。
 > 分类器只有 1.12MB —— 因为它的输入是「17 个关节 × 3 个数」，不是像素。
 
+### 数据闭环
+
+公开数据集（NTU RGB+D / Kinetics）无法直接使用：没有「原子动作」粒度、
+没有边界标注、场景也不匹配。因此本仓库提供**从录制到训练的全套工具**：
+
+```
+录制视频 → 自动抽关键点 → GUI 标注 → 质量校验 → 导出训练窗口 → 按人划分 → 训练 → 段级评估
+```
+
+完整流程见下方 [Step 0 ~ Step 11](#完整数据到模型工作流)。
+
 ---
 
 ## 目录
 
-- [它解决什么问题](#它解决什么问题)
+- [这是什么](#这是什么)
 - [核心特性](#核心特性)
 - [三分钟跑通](#三分钟跑通)
 - [完整数据到模型工作流](#完整数据到模型工作流) ← **数据怎么做在这**

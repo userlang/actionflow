@@ -98,7 +98,7 @@ fusion    → 骨架路 + 视频路 Cross-Attention（可选增强）
 **你会用 / 不会用**
 ```
 ✅ RTMPose、MMPose、nn.TransformerEncoder、One-Euro、Hysteresis、Viterbi
-✅ 因果注意力掩码、边界回归头、Cross-Attention、Softplus（已自己实现）
+✅ 因果注意力掩码、边界回归头、Cross-Attention、Softplus
 ⚠️ 知道原理但先不用：ST-GCN、BSN、CRF、因果 TCN
 —  不用：整个视频路线（VideoMAE/SlowFast/TimeSformer）
 ```
