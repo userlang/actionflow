@@ -53,6 +53,13 @@
   .sz img{display:block;margin:0 auto}
   .sz span{display:block;font:11px/1 var(--mono);color:var(--fg-mute);margin-top:7px}
 
+  .box{
+    background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:14px 18px;margin:18px 0;font-size:14px;line-height:1.7
+  }
+  .box code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+    padding:1px 6px;font-family:var(--mono);font-size:12.5px;color:var(--accent)}
+
   .foot{color:var(--fg-mute);font-size:13px;text-align:center;padding:28px 0 0;border-top:1px solid var(--border);margin-top:44px}
   @media (max-width:640px){ .wrap{padding:0 16px 60px} header{padding:36px 16px 28px} }
 </style>
@@ -61,11 +68,20 @@
 
 <header>
   <div class="eyebrow">Logo Candidates</div>
+  <img src="logo.svg" width="72" alt="ActionFlow" style="margin-bottom:14px">
   <h1>ActionFlow Logo 候选</h1>
   <p class="sub">四个方向 · 深色底（README）· 浅色底（文档 / 打印 / favicon 反色）</p>
 </header>
 
 <div class="wrap">
+
+<div class="box">
+  <b>当前采用：</b>D · 字母组合 —— <code>assets/logo/logo.svg</code><br>
+  <span style="color:var(--fg-dim);font-size:13.5px">
+  A/F 融进一个「A」形，横条是动作段。笔画粗、轮廓简单，缩到 20px 依然可辨，
+  最像正式开源项目的品牌标识。已导出 PNG（128/256/512）供仓库头像使用。
+  </span>
+</div>
 
 <h2>A · 骨架人形</h2>
 <div class="grid">

@@ -1,33 +1,24 @@
 <div align="center">
 
+<img src="assets/logo/logo-d-monogram.svg" width="88" alt="ActionFlow logo">
+
 # ActionFlow
 
 **端侧流式人体原子动作识别引擎**
 
-### `一段真人视频 → 带精确时间戳的结构化动作序列`
+`一段真人视频 → 带精确时间戳的结构化动作序列`
 
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg?logo=python&logoColor=white)](pyproject.toml)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange.svg?logo=pytorch&logoColor=white)](pyproject.toml)
 [![NumPy](https://img.shields.io/badge/NumPy-≥1.21-blue.svg?logo=numpy&logoColor=white)](pyproject.toml)
 [![OpenCV](https://img.shields.io/badge/OpenCV-≥4.5-green.svg?logo=opencv&logoColor=white)](pyproject.toml)
 [![ONNX](https://img.shields.io/badge/ONNX-Runtime-black.svg?logo=onnx&logoColor=white)](https://onnxruntime.ai/)
+[![RTMPose](https://img.shields.io/badge/pose-RTMPose-blue.svg?logo=mmpose&logoColor=white)](https://arxiv.org/abs/2303.05499)
+[![Transformer](https://img.shields.io/badge/model-Transformer-orange.svg?logo=transformers&logoColor=white)](https://arxiv.org/abs/1706.03762)
+[![Viterbi](https://img.shields.io/badge/decode-Viterbi-purple.svg)](https://ieeexplore.ieee.org/document/433255)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache&logoColor=white)](LICENSE)
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-124%2F124%20passing-brightgreen.svg)](tests/)
-
----
-
-### 核心技术栈与算法
-
-[![RTMPose](https://img.shields.io/badge/pose-RTMPose-blue.svg?logo=mmpose&logoColor=white)](https://arxiv.org/abs/2303.05499)
-[![SimCC](https://img.shields.io/badge/pose-SimCC-blue.svg?logo=mmpose&logoColor=white)](https://arxiv.org/abs/2108.07936)
-[![One-Euro](https://img.shields.io/badge/filter-One%20Euro%20Filter-teal.svg)](https://dl.acm.org/doi/10.1145/2207673.2208636)
-[![Transformer](https://img.shields.io/badge/model-Transformer-orange.svg?logo=transformers&logoColor=white)](https://arxiv.org/abs/1706.03762)
-[![Causal](https://img.shields.io/badge/model-Causal%20Mask-orange.svg?logo=pytorch&logoColor=white)](actionflow/models/streaming.py)
-[![CrossAttention](https://img.shields.io/badge/model-Cross%20Attention-orange.svg?logo=pytorch&logoColor=white)](actionflow/models/fusion.py)
-[![Viterbi](https://img.shields.io/badge/decode-Viterbi-purple.svg)](https://ieeexplore.ieee.org/document/433255)
-[![Hysteresis](https://img.shields.io/badge/decode-Hysteresis-purple.svg)](https://ieeexplore.ieee.org/document/376740)
-[![ActionFormer](https://img.shields.io/badge/decode-Boundary%20Regression-purple.svg)](https://arxiv.org/abs/2208.05374)
 
 </div>
 

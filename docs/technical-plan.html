@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="../assets/logo/favicon.svg" type="image/svg+xml">
 <title>ActionFlow 技术方案 · 流式人体原子动作识别引擎</title>
 <style>
   :root{
@@ -34,6 +35,7 @@
     font:600 11px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
     color:var(--accent); margin-bottom:18px;
   }
+  .head-title{text-align:center}
   h1{font-size:44px;line-height:1.2;margin:0 0 14px;letter-spacing:-.5px}
   h1 .grad{
     background:linear-gradient(92deg,var(--accent),var(--accent2));
@@ -179,7 +181,8 @@
 <header>
   <div class="head-inner">
     <div class="eyebrow">Technical Proposal · v1.3</div>
-    <h1>ActionFlow<br><span class="grad">流式人体原子动作识别引擎</span></h1>
+    <img src="../assets/logo/logo.svg" width="60" alt="ActionFlow" style="display:block;margin:0 auto 14px">
+    <h1 class="head-title">ActionFlow<br><span class="grad">流式人体原子动作识别引擎</span></h1>
     <p class="tagline">
       输入一段真人视频（或摄像头实时流），在线输出带时间戳的动作序列
       <code>[(0.0-1.2s) 左抬腿, (1.2-2.5s) 右手握拳…]</code>，端侧可跑。
