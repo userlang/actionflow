@@ -191,7 +191,7 @@
       <span class="chip"><b>融合</b> Cross-Attention</span>
       <span class="chip"><b>解码</b> One-Euro + Hysteresis + Viterbi</span>
       <span class="chip"><b>部署</b> ONNX Runtime</span>
-      <span class="chip"><b>目标</b> 开源 · 面试 demo</span>
+      <span class="chip"><b>目标</b> 开源 · 端侧行为理解</span>
     </div>
   </div>
 </header>
@@ -209,18 +209,16 @@
     <li><a href="#s6">训练：数据集与训练循环</a></li>
     <li><a href="#s7">工程结构与三条命令</a></li>
     <li><a href="#s8">开发路线图</a></li>
-    <li><a href="#s9">简历写法</a></li>
-    <li><a href="#s10">面试高频问答</a></li>
-    <li><a href="#s11">开源协议避坑</a></li>
-    <li><a href="#s12">下一步</a></li>
-    <li><a href="#s13">三层架构详解（重点）</a></li>
-    <li><a href="#s14">算法全景与出名度分级</a></li>
-    <li><a href="#s15">三个手写模块 + 为什么要解码层</a></li>
-    <li><a href="#s16">流式因果架构实现方案</a></li>
-    <li><a href="#s17">因果注意力掩码（已实现）</a></li>
-    <li><a href="#s18">边界回归头（已实现）</a></li>
-    <li><a href="#s19">双路融合 + Cross-Attention（已实现）</a></li>
-    <li><a href="#s20">自建数据集与标注工具（已实现）</a></li>
+    <li><a href="#s9">开源协议避坑</a></li>
+    <li><a href="#s10">下一步</a></li>
+    <li><a href="#s11">三层架构详解（重点）</a></li>
+    <li><a href="#s12">算法全景与出名度分级</a></li>
+    <li><a href="#s13">三个手写模块 + 为什么要解码层</a></li>
+    <li><a href="#s14">流式因果架构实现方案</a></li>
+    <li><a href="#s15">因果注意力掩码（已实现）</a></li>
+    <li><a href="#s16">边界回归头（已实现）</a></li>
+    <li><a href="#s17">双路融合 + Cross-Attention（已实现）</a></li>
+    <li><a href="#s18">自建数据集与标注工具（已实现）</a></li>
   </ol>
 </nav>
 
@@ -251,7 +249,7 @@
   <div class="box info">
     <span class="lbl">已主动砍掉的部分</span>
     <p>视频路（Video Swin / VideoMAE）、Cross-Attention 跨模态融合、双路特征门控 —— 这些是「完整版」的理想形态，但会让工程复杂度翻 3 倍。<b>第一版全部砍掉</b>，只保留骨架单路，跑通闭环再考虑加。</p>
-    <p style="margin-top:10px">📌 <b>更新</b>：这些后来都补上了，但<b>默认配置仍然是骨架单路</b> —— 见 <a href="#s19">第 19 节</a>（双路融合）。原因不变：端侧 0.11M 参数的承诺比精度更重要，视频路是<b>可选增强</b>。</p>
+    <p style="margin-top:10px">📌 <b>更新</b>：这些后来都补上了，但<b>默认配置仍然是骨架单路</b> —— 见 <a href="#s17">第 17 节</a>（双路融合）。原因不变：端侧 0.11M 参数的承诺比精度更重要，视频路是<b>可选增强</b>。</p>
   </div>
 </section>
 
@@ -296,14 +294,14 @@ kpts = outs[<span class="num">0</span>][<span class="num">0</span>]      <span c
 
   <div class="box warn">
     <span class="lbl">完全不需要懂</span>
-    <p>RTMPose 内部是 ViT + SimCC（把坐标预测变成分类问题）。<b>当黑盒用</b>。面试时说「用了 RTMPose 并在自建数据上微调」即可。</p>
+    <p>RTMPose 内部是 ViT + SimCC（把坐标预测变成分类问题）。<b>当黑盒用</b>：下载预训练权重做推理，本项目不训练它。</p>
   </div>
 </section>
 
 <!-- ================= 3 ================= -->
 <section id="s3">
   <div class="sec-head"><span class="sec-num">03</span><h2>组件二：Transformer 动作分类</h2></div>
-  <p class="lede">它是干嘛的：把「一段时间内的骨架序列」映射成「动作类别」。这是你简历上真正的技术含量所在。</p>
+  <p class="lede">它是干嘛的：把「一段时间内的骨架序列」映射成「动作类别」。这是整个项目的核心 —— 前后的层都是在为它准备干净、规整的输入。</p>
 
   <div class="flow">输入: 骨架序列 <span class="hl">[T, 17, 3]</span>   (T=32 帧)
       ↓ 展平每个关节的特征
@@ -371,7 +369,7 @@ nn.ModuleList([...])                <span class="cm"># 多模块列表</span></c
 <!-- ================= 4 ================= -->
 <section id="s4">
   <div class="sec-head"><span class="sec-num">04</span><h2>组件三：时序解码（三个手写算法）</h2></div>
-  <p class="lede">这一层没有任何框架帮忙，全是算法 —— 也正是面试时最能讲出细节、最能体现「我懂」的部分。</p>
+  <p class="lede">这一层没有任何框架帮忙，全是算法 —— 也是本项目里最值得逐行读懂的部分。</p>
 
   <h3>(a) One-Euro Filter — 关键点抖动滤波</h3>
   <div class="box warn">
@@ -410,8 +408,8 @@ nn.ModuleList([...])                <span class="cm"># 多模块列表</span></c
     <span class="kw">for</span> i, f <span class="kw">in</span> <span class="fn">enumerate</span>(filters):
         kp_flat[i] = f(kp_flat[i], dt)</code></pre>
   <div class="box ok">
-    <span class="lbl">面试答法</span>
-    <p>「逐帧独立姿态检测会有抖动，导致骨架几何特征不稳定。我用了 One-Euro Filter，它的截止频率随速度自适应，慢动作时强滤波、快动作时弱滤波，在去抖和延迟之间取得平衡。」</p>
+    <span class="lbl">一句话总结</span>
+    <p>逐帧独立姿态检测会有抖动，导致骨架几何特征不稳定。One-Euro Filter 的截止频率随速度自适应 —— 慢动作时强滤波、快动作时弱滤波，在去抖和延迟之间取得平衡。</p>
   </div>
 
   <h3>(b) 坐标归一化 — 让模型不看画面位置和体型</h3>
@@ -426,8 +424,8 @@ nn.ModuleList([...])                <span class="cm"># 多模块列表</span></c
     <li>转身 90° → 旋转到标准朝向后依然能识别</li>
   </ul>
   <div class="box ok">
-    <span class="lbl">面试答法</span>
-    <p>「我做了身体坐标系归一化 —— 以髋中心为原点、躯干方向为朝向、躯干长度为尺度，这样模型学的是动作本身，而非画面位置和体型差异。」</p>
+    <span class="lbl">一句话总结</span>
+    <p>身体坐标系归一化 —— 以髋中心为原点、躯干方向为朝向、躯干长度为尺度，这样模型学的是动作本身，而非画面位置和体型差异。</p>
   </div>
 
   <h3>(c) Hysteresis 双阈值 — 边界稳定</h3>
@@ -567,18 +565,25 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
 
   <div class="flow">actionflow/
 ├── models/
-│   └── classifier.py       <span class="ok"># Transformer 分类器（核心）</span>
+│   ├── classifier.py       <span class="ok"># 离线 Transformer 分类器</span>
+│   ├── streaming.py        <span class="ok"># ★因果流式分类器 + 因果掩码</span>
+│   ├── boundary.py         <span class="ok"># ★边界回归头</span>
+│   └── fusion.py           <span class="ok"># ★视频路 + Cross-Attention</span>
 ├── data/
-│   ├── ntu.py              <span class="ok"># NTU 解析 + Dataset + 增强</span>
-│   └── augment.py
+│   ├── ntu.py              <span class="ok"># NTU 解析</span>
+│   ├── dataset.py          <span class="ok"># Dataset + 骨架增强</span>
+│   ├── annotate*.py        <span class="ok"># ★标注工具（CLI + GUI）</span>
+│   └── annotated.py        <span class="ok"># ★标签映射 + 按人划分</span>
 ├── postprocess/
 │   ├── filters.py          <span class="ok"># One-Euro Filter</span>
 │   ├── normalize.py        <span class="ok"># 身体坐标系</span>
 │   └── decode.py           <span class="ok"># Hysteresis + Viterbi</span>
-├── inference/
+├── infer/
 │   └── pipeline.py         <span class="ok"># 端到端：视频 → 动作序列</span>
-├── export/
-│   └── export_onnx.py
+├── io/
+│   └── pose_infer.py       <span class="ok"># RTMPose ONNX + SimCC</span>
+├── export.py               <span class="ok"># ONNX 导出</span>
+├── evaluate.py             <span class="ok"># ★段级评估</span>
 └── configs/</div>
 
   <h3>三条命令</h3>
@@ -586,29 +591,29 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
     <div class="step">
       <h4>Step 1 — 姿态提取（先验证这一步能跑）</h4>
       <p>这一步不通，后面都白搭。</p>
-      <div class="deliver"><span class="kbd">python -m actionflow.tools.extract_pose --video demo.mp4 --out poses.npz</span></div>
+      <div class="deliver"><span class="kbd">python -m actionflow.cli pose --video assets/demo.mp4 --visualize out.mp4</span></div>
     </div>
     <div class="step">
       <h4>Step 2 — 训练分类器</h4>
-      <p>在 NTU 上训出 baseline accuracy。</p>
-      <div class="deliver"><span class="kbd">python -m actionflow.train --config configs/ntu_skel_transformer.yaml</span></div>
+      <p>用自建标注数据集训练（<code>--dataset-type annotated</code>）。</p>
+      <div class="deliver"><span class="kbd">python -m actionflow.train --data data/windows --dataset-type annotated --annotations data/annotations --labels-json data/labels.json --splits data/splits --arch streaming --epochs 60 --lr 1e-3</span></div>
     </div>
     <div class="step">
-      <h4>Step 3 — 端到端 demo</h4>
+      <h4>Step 3 — 端到端推理</h4>
       <p>闭环达成，输出带时间戳的动作序列。</p>
-      <div class="deliver"><span class="kbd">python -m actionflow.demo --video demo.mp4 --model weights/af.pth</span></div>
+      <div class="deliver"><span class="kbd">python -m actionflow.cli infer --video data/clips/s01_a.mp4 --model weights/my_action.pth --out result.json</span></div>
     </div>
   </div>
   <div class="box ok">
     <span class="lbl">预期输出</span>
-    <p><code class="inline">[{"t":0.0,"dur":1.2,"label":"右抬腿","conf":0.94}, ...]</code></p>
+    <p><code class="inline">[{"start":0.0,"end":1.2,"duration":1.2,"label":"右抬腿","confidence":0.94}, ...]</code></p>
   </div>
 </section>
 
 <!-- ================= 8 ================= -->
 <section id="s8">
   <div class="sec-head"><span class="sec-num">08</span><h2>开发路线图</h2></div>
-  <p class="lede">如果只剩 10 天，这是保底方案。每天都有可交付物，面试时不会两手空空。</p>
+  <p class="lede">如果只剩 10 天，这是保底方案。每天都有可交付物，不会两头落空。</p>
 
   <table>
     <thead><tr><th>天</th><th>做什么</th><th>交付</th></tr></thead>
@@ -623,7 +628,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </table>
 
   <div class="box ok">
-    <span class="lbl">保底版仍然能撑起简历</span>
+    <span class="lbl">保底版交付内容</span>
     <p>自研骨架时序 Transformer 动作识别 + One-Euro 滤波 + 坐标归一化 + 双阈值时序解码，端侧 ONNX 部署。</p>
   </div>
 
@@ -637,73 +642,14 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
 
   <div class="box ok">
     <span class="lbl">✅ 加分项完成情况</span>
-    <p>上面四条<b>全部已实现</b>，对应第 <a href="#s17">17</a>、<a href="#s18">18</a>、<a href="#s19">19</a>、<a href="#s20">20</a> 节。测试从 35 个增加到 <b>112 个</b>。</p>
+    <p>上面四条<b>全部已实现</b>，对应第 <a href="#s15">15</a>、<a href="#s16">16</a>、<a href="#s17">17</a>、<a href="#s18">18</a> 节。测试从 35 个增加到 <b>124 个</b>。</p>
     <p style="margin-top:10px">接下来的方向：<b>训一个真实权重</b>（当前只有 mock 姿态模型）→ <b>端侧 ONNX 部署实测</b>（Android / 树莓派）→ <b>双路融合的量化压缩</b>。</p>
   </div>
 </section>
 
 <!-- ================= 9 ================= -->
 <section id="s9">
-  <div class="sec-head"><span class="sec-num">09</span><h2>简历写法</h2></div>
-  <p class="lede">别写「基于 MMPose + VideoMAE 实现动作识别」，那看起来像调包。写成「自研」。</p>
-
-  <div class="box ok">
-    <span class="lbl">推荐表述</span>
-    <p><b>ActionFlow</b> — 流式人体原子动作识别引擎（自研）</p>
-    <p>· 设计骨架时序 Transformer 编码器：关节嵌入 + 时间位置编码 + <code class="inline">nn.TransformerEncoder</code>，基于关键点置信度 mask 处理漏检</p>
-    <p>· 自研 One-Euro 自适应滤波与身体坐标系归一化，解决关键点抖动与尺度/位置不变性问题</p>
-    <p>· 自研双阈值时序解码（Hysteresis）与隐马尔可夫动态规划后处理，实现流式逐帧输出带时间戳动作段</p>
-    <p>· ONNX 导出 + 端侧推理，端到端延迟 xxx ms @ xxx FPS</p>
-  </div>
-
-  <p><b>关键词覆盖</b>（面试官扫一眼就知道你会什么）：</p>
-  <div class="badges">
-    <span class="badge">Transformer</span>
-    <span class="badge">位置编码</span>
-    <span class="badge">Key-Padding Mask</span>
-    <span class="badge">信号滤波</span>
-    <span class="badge">坐标归一化</span>
-    <span class="badge">时序分割</span>
-    <span class="badge">动态规划</span>
-    <span class="badge">ONNX 部署</span>
-    <span class="badge">PyTorch</span>
-    <span class="badge">数据增强</span>
-    <span class="badge">模型评估</span>
-  </div>
-</section>
-
-<!-- ================= 10 ================= -->
-<section id="s10">
-  <div class="sec-head"><span class="sec-num">10</span><h2>面试高频问答</h2></div>
-
-  <h3>Q1 · 为什么不用现成的 VideoMAE / TimeSformer？</h3>
-  <p>端侧算力约束 + 原子动作需要结构化可解释 + 流式因果需求 + 小数据下骨架先验优于视频。骨架路模型 &lt;5MB，能跑树莓派和手机。</p>
-
-  <h3>Q2 · 你的模型是自己训的还是用预训练？</h3>
-  <p>姿态用 RTMPose 预训练权重微调，<b>编码器、分类头、时序解码全部自己实现并用自己数据训练</b>。推理引擎用 ONNX Runtime 是工程选择（端侧部署本来就该用成熟引擎）。</p>
-
-  <h3>Q3 · 时间戳怎么保证精确？</h3>
-  <p>帧级概率 + 边界回归头 + Viterbi 平滑 + 帧号/FPS 换算。时间戳精度到帧，不做秒级凑整。</p>
-
-  <h3>Q4 · 怎么保证实时？</h3>
-  <p>因果结构（无需未来帧）、ONNX Runtime、One-Euro 在线滤波、滑动窗口 + 重叠推理。可给出实测延迟数字。</p>
-
-  <h3>Q5 · 你的数据集怎么来的？多大规模？</h3>
-  <p>公开数据集打底（NTU RGB+D 60）+ 自建原子动作集。给出真实数字：类别数、人数、时长、视角数、标注一致性。</p>
-
-  <h3>Q6 · 为什么关键点要滤波？不能直接用吗？</h3>
-  <p>RTMPose 逐帧独立检测，静止时坐标抖动 ±3 像素，导致骨长特征剧烈变化，模型输入分布崩溃。One-Euro 的截止频率随速度自适应，是这个问题的标准解法。</p>
-
-  <h3>Q7 · 为什么用 Transformer 而不是 ST-GCN / LSTM？</h3>
-  <p>骨架是图/集合结构，自注意力能直接建模任意两个关节的相对关系（左手相对右手在哪），不依赖固定的邻接矩阵。相较 LSTM 并行友好、感受野更直接。代价是 T² 复杂度，靠 T=32 的窗口控制。</p>
-
-  <h3>Q8 · 怎么解决左右手混淆？</h3>
-  <p>三个手段：① 关键点索引严格固定（COCO 标准）；② 训练时做左右翻转增强 + 同步翻转标签；③ 数据标注做一致性检查（双人标注 + Cohen's kappa）。</p>
-</section>
-
-<!-- ================= 11 ================= -->
-<section id="s11">
-  <div class="sec-head"><span class="sec-num">11</span><h2>开源协议避坑</h2></div>
+  <div class="sec-head"><span class="sec-num">09</span><h2>开源协议避坑</h2></div>
   <p class="lede">你要开源，这块必须先搞清楚，否则可能被 claim。</p>
 
   <table>
@@ -726,25 +672,25 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </div>
 </section>
 
-<!-- ================= 12 ================= -->
-<section id="s12">
-  <div class="sec-head"><span class="sec-num">12</span><h2>下一步</h2></div>
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <div class="sec-head"><span class="sec-num">10</span><h2>下一步</h2></div>
   <p class="lede">选一个，我直接开始写代码。</p>
 
   <div class="grid g2">
     <div class="card">
       <h5><span class="dot"></span>A · 端到端 pipeline</h5>
-      <p>视频 → 动作序列 JSON，含摄像头实时模式。最炫的 demo 视频，也是面试开场最直接的展示物。</p>
+      <p>视频 → 动作序列 JSON，含摄像头实时模式。最直观的展示方式。</p>
       <div class="api">产出：demo.mp4 + 实时演示</div>
     </div>
     <div class="card">
       <h5><span class="dot"></span>B · 三个手写算法模块</h5>
-      <p>One-Euro Filter + 身体坐标系归一化 + Hysteresis/Viterbi。面试最想听细节的部分。</p>
+      <p>One-Euro Filter + 身体坐标系归一化 + Hysteresis/Viterbi。细节最多、最值得读懂的部分。</p>
       <div class="api">产出：postprocess/ 三个文件</div>
     </div>
     <div class="card">
       <h5><span class="dot"></span>C · Transformer 分类器</h5>
-      <p>含 mask、位置编码、池化 + ONNX 导出脚本。简历里「自研」的代码本体。</p>
+      <p>含 mask、位置编码、池化 + ONNX 导出脚本。模型层的代码本体。</p>
       <div class="api">产出：models/classifier.py</div>
     </div>
     <div class="card">
@@ -760,9 +706,9 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </div>
 </section>
 
-<!-- ================= 13 ================= -->
-<section id="s13">
-  <div class="sec-head"><span class="sec-num">13</span><h2>三层架构详解：姿态 → 分类 → 定位</h2></div>
+<!-- ================= 11 ================= -->
+<section id="s11">
+  <div class="sec-head"><span class="sec-num">11</span><h2>三层架构详解：姿态 → 分类 → 定位</h2></div>
   <p class="lede">这一节回答你的核心疑问：「① 姿态识别 + ② 时序串联」组合起来为什么还不够 —— 你漏掉了中间的<strong>动作分类</strong>这一环。</p>
 
   <div class="box warn">
@@ -843,9 +789,9 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </table>
 </section>
 
-<!-- ================= 14 ================= -->
-<section id="s14">
-  <div class="sec-head"><span class="sec-num">14</span><h2>算法全景与出名度分级</h2></div>
+<!-- ================= 12 ================= -->
+<section id="s12">
+  <div class="sec-head"><span class="sec-num">12</span><h2>算法全景与出名度分级</h2></div>
   <p class="lede">每一层有哪些经典算法、各自什么地位、ActionFlow 选了哪个。</p>
 
   <h3>Layer 1 · 姿态识别（Pose Estimation）</h3>
@@ -890,7 +836,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   <h4>2.1 视频路线（Video-based）</h4>
   <div class="box warn">
     <span class="lbl">这条路你现在不走</span>
-    <p>整条视频路线在 v1 里<b>全部搁置</b>，但你要知道它们的存在与优劣，面试被问到「为什么不用视频」时才能答得上。</p>
+    <p>整条视频路线在 v1 里<b>全部搁置</b>，但要知道它们的存在与优劣 —— 这决定了「为什么本项目走骨架路」这个架构决策。</p>
     <p>唯一例外：如果你后期加<b>视频路做消融实验</b>，首选 <b>Video Swin-T</b>（CNN 层次 + Transformer 注意力，端侧友好，MIT 协议）。</p>
   </div>
   <table>
@@ -913,13 +859,13 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   <div class="box ok">
     <span class="lbl">你会用的就一个：Transformer Encoder</span>
     <p><b>✅ 会用</b>：<code class="inline">nn.TransformerEncoder</code>（2 层，d_model=128，nhead=4）—— 这是你的骨架编码器本体。</p>
-    <p><b>⚠️ 知道但不用</b>：ST-GCN / AST-GCN / CTR-GCN —— 它们的图卷积思想值得了解（面试对比题），但 v1 不用。</p>
-    <p><b>注意</b>：ST-GCN 虽然被你不用，但它是这个领域的<b>必知基线</b>，面试官很可能会问「你为什么不用 ST-GCN」。</p>
+    <p><b>⚠️ 知道但不用</b>：ST-GCN / AST-GCN / CTR-GCN —— 它们的图卷积思想值得了解，但 v1 不用。</p>
+    <p><b>注意</b>：ST-GCN 虽然不用，但它是这个领域的<b>必知基线</b> —— 想知道「为什么本项目选 Transformer 而不是图卷积」，就得先懂它。</p>
   </div>
   <table>
     <thead><tr><th>算法</th><th>年份</th><th>出名度</th><th>核心贡献</th><th>ActionFlow</th></tr></thead>
     <tbody>
-      <tr><td><b>ST-GCN</b></td><td>2017</td><td>⭐⭐⭐⭐⭐</td><td><b>骨架动作识别开山之作</b>，图卷积建模关节拓扑</td><td><span style="color:var(--warn)">⚠️ 不用，但必须知道</span><br><span style="font-size:12px">面试对比必备</span></td></tr>
+      <tr><td><b>ST-GCN</b></td><td>2017</td><td>⭐⭐⭐⭐⭐</td><td><b>骨架动作识别开山之作</b>，图卷积建模关节拓扑</td><td><span style="color:var(--warn)">⚠️ 不用，但必须知道</span><br><span style="font-size:12px">架构选型的对照组</span></td></tr>
       <tr><td>AST-GCN</td><td>2019</td><td>⭐⭐⭐⭐</td><td>自适应图卷积，NTU 经典 baseline</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
       <tr><td>MS-G3D</td><td>2020</td><td>⭐⭐⭐⭐</td><td>多尺度图卷积 + 时序卷积</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
       <tr><td>CTR-GCN</td><td>2021</td><td>⭐⭐⭐⭐</td><td>Channel-wise Topology Refinement，NTU ~90%</td><td><span style="color:var(--fg-mute)">—<br><span style="font-size:12px">性能对标对象</span></span></td></tr>
@@ -929,7 +875,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </table>
 
   <div class="box info">
-    <span class="lbl">关键对比：ST-GCN（图卷积） vs Transformer（自注意力）—— 面试必答</span>
+    <span class="lbl">关键对比：ST-GCN（图卷积） vs Transformer（自注意力）</span>
     <p><b>ST-GCN：</b>显式建模关节邻接关系；依赖人工定义的骨架图；参数量小、极快；归纳偏置强；2017 年的范式。</p>
     <p><b>Transformer：</b>隐式学习任意关节对的关系；不需要图结构、数据驱动；复杂度 O(T²·V²)，需控制窗口；泛化好、可迁移到新关节集；2021+ 的范式。</p>
     <p style="margin-top:10px"><b>你的选择合理性：</b>① Transformer 在骨架任务上能到 NTU-60 ~90%，与 CTR-GCN 相当；② 骨架路模型 &lt;5MB，比 CTR-GCN 更小，端侧友好；③ 配合因果掩码可满足流式需求（ST-GCN 天然因果但缺少长程建模）。</p>
@@ -953,10 +899,10 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   <div class="box ok">
     <span class="lbl">你实际会用的三个（全部手写）</span>
     <p><b>✅ 会用</b>：<code class="inline">Hysteresis 双阈值</code>（简单、有效、抗抖动）<br>
-       <b>✅ 会用</b>：<code class="inline">Viterbi 动态规划</code>（全局最优路径，面试加分）<br>
+       <b>✅ 会用</b>：<code class="inline">Viterbi 动态规划</code>（全局最优路径）<br>
        <b>✅ 会用</b>：<code class="inline">最小持续时长约束</code>（一行代码，滤除假阳性）</p>
     <p><b>⚠️ 知道原理但先不用</b>：BSN / BMN / ActionFormer / ASFormer —— 这些是<b>论文级</b>的时序定位框架，训练复杂。你 v1 不做，但<b>必须知道它们存在</b>，因为「为什么不用 ActionFormer」是很自然的追问。</p>
-    <p style="margin-top:10px"><b>💡 面试加分项</b>：如果后期有余力，把 <b>Boundary Head（边界回归头）</b> 加进去 —— 这是借鉴 ActionFormer 的核心思想，用一个简单的回归头就能显著提升时间戳精度，投入产出比最高。</p>
+    <p style="margin-top:10px"><b>💡 性价比最高的一步</b>：把 <b>Boundary Head（边界回归头）</b> 加进去 —— 这是借鉴 ActionFormer 的核心思想，用一个简单的回归头就能显著提升时间戳精度。（本仓库已实现，见第 16 节）</p>
   </div>
   <table>
     <thead><tr><th>算法</th><th>年份</th><th>出名度</th><th>技术要点</th><th>ActionFlow</th></tr></thead>
@@ -965,7 +911,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
       <tr><td>MS-TCN / MS-TCN++</td><td>2019</td><td>⭐⭐⭐⭐</td><td>多阶段 TCN，目前 TAL SOTA 之一</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
       <tr><td><b>BSN</b> Boundary-Sensitive Network</td><td>2020</td><td>⭐⭐⭐⭐</td><td><b>边界概率 + 置信度曲线</b>，边界敏感损失的开创者</td><td><span style="color:var(--warn)">⚠️ 借鉴其思想</span><br><span style="font-size:12px">你做简化版 Boundary Head</span></td></tr>
       <tr><td>BMN</td><td>2019</td><td>⭐⭐⭐⭐</td><td>Boundary-Matching Network，IoU 匹配边界</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
-      <tr><td><b>ActionFormer</b></td><td>2022</td><td>⭐⭐⭐⭐⭐</td><td><b>Transformer 时序建模 + 边界回归</b>，统一框架，当前主流</td><td><span style="color:var(--warn)">⚠️ 知道存在<br><span style="font-size:12px">面试必被问「为什么不用它」</span></span></td></tr>
+      <tr><td><b>ActionFormer</b></td><td>2022</td><td>⭐⭐⭐⭐⭐</td><td><b>Transformer 时序建模 + 边界回归</b>，统一框架，当前主流</td><td><span style="color:var(--warn)">⚠️ 知道存在<br><span style="font-size:12px">本项目只借了它的边界回归思想</span></span></td></tr>
       <tr><td>ASFormer</td><td>2021</td><td>⭐⭐⭐⭐</td><td>Transformer + 动作感知建模，TAL SOTA</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
       <tr><td>TEA / TEA++</td><td>2020-21</td><td>⭐⭐⭐</td><td>时序对齐模块，抗背景干扰</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
       <tr><td>DiffTAD</td><td>2024</td><td>⭐⭐⭐</td><td>扩散模型做 TAL</td><td><span style="color:var(--fg-mute)">—</span></td></tr>
@@ -982,7 +928,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
     <span class="lbl">① 边界敏感损失（Boundary-Sensitive Loss）—— 借鉴 BSN / ActionFormer</span>
     <p><b>问题：</b>标准分类损失对「动作开始那一刻」和「动作正中间」一视同仁，但<b>边界定位精度恰恰决定了时间戳准不准</b>。</p>
     <p><b>BSN 的做法：</b>不只回归边界，还预测一条<b>置信度曲线</b>，表示每个位置上「有多大概率这里是边界」。</p>
-    <p><b>面试答法：</b>「我引入边界敏感监督：分类损失之外，对边界附近的帧加权，并额外回归边界偏移量。这样模型不只是知道'这是抬手'，还知道'抬手从哪一帧开始'。」</p>
+    <p><b>做法：</b>引入边界敏感监督：分类损失之外，对边界附近的帧加权，并额外回归边界偏移量。这样模型不只是知道'这是抬手'，还知道'抬手从哪一帧开始'。</p>
   </div>
 
   <div class="box info">
@@ -1004,7 +950,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   <hr>
 
   <h3>「技术出名度」怎么客观回答</h3>
-  <p class="lede">面试官如果问「你用的技术出名吗」，你需要的是一个<strong>分层的诚实答案</strong>，而不是简单说「都很出名」。</p>
+  <p class="lede">「我用的技术出名吗」—— 这里需要的是一个<strong>分层的诚实回答</strong>，而不是简单说「都很出名」。</p>
 
   <table>
     <thead><tr><th>层次</th><th>技术</th><th>出名度</th><th>你的贡献度</th></tr></thead>
@@ -1020,15 +966,15 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
   </table>
 
   <div class="box ok">
-    <span class="lbl">面试话术（建议照着这个说）</span>
+    <span class="lbl">推荐说法</span>
     <p>「底层感知用的是 RTMPose，这是工业界落地最广的姿态方案。真正属于我的实现是骨架时序 Transformer、边界敏感损失、流式因果解码，以及归一化滤波这部分。我不认为把预训练模型当黑盒是短板 —— <b>关键是我的方法贡献在哪一层是清楚的</b>。」</p>
     <p style="margin-top:10px">这个回答的价值：既不狂妄（承认用了成熟模型），也不妄自菲薄（清楚讲出自己的贡献边界）。这正是成熟工程师的表达方式。</p>
   </div>
 </section>
 
-<!-- ================= 15 ================= -->
-<section id="s15">
-  <div class="sec-head"><span class="sec-num">15</span><h2>三个手写模块 + 为什么要解码层</h2></div>
+<!-- ================= 13 ================= -->
+<section id="s13">
+  <div class="sec-head"><span class="sec-num">13</span><h2>三个手写模块 + 为什么要解码层</h2></div>
   <p class="lede">这一节专门解释三个你没听过的名字，并回答「为什么模型后面还要再接一层解码」。</p>
 
   <h3>先回答：为什么会有解码层？</h3>
@@ -1214,7 +1160,7 @@ sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
 
   <div class="box info">
     <span class="lbl">它属于哪一类技术</span>
-    <p>它是<b>隐马尔可夫模型（HMM）</b>的解码算法，1970 年代提出（Vintner & Dreyfus 1970 / Rabiner 1989）。<b>教科书级经典算法</b>，面试提「用 Viterbi 解码」是加分项，因为很多人只知道 HMM 这个名字，写不出 DP 转移。</p>
+    <p>它是<b>隐马尔可夫模型（HMM）</b>的解码算法，1970 年代提出（Vintner & Dreyfus 1970 / Rabiner 1989）。<b>教科书级经典算法</b> —— 很多人只知道 HMM 这个名字，却写不出它的 DP 转移。</p>
     <p>在 ActionFlow 里，它是<b>全局最优的时序平滑</b>。</p>
   </div>
 
@@ -1299,9 +1245,9 @@ Viterbi 递推:
   </div>
 </section>
 
-<!-- ================= 16 ================= -->
-<section id="s16">
-  <div class="sec-head"><span class="sec-num">16</span><h2>流式因果架构实现方案</h2></div>
+<!-- ================= 14 ================= -->
+<section id="s14">
+  <div class="sec-head"><span class="sec-num">14</span><h2>流式因果架构实现方案</h2></div>
   <p class="lede">「在线输出」是你项目的核心定位，必须在架构层面落地，而不是只在 README 里写「支持实时」。</p>
 
   <h3>问题：标准 Transformer 是双向的</h3>
@@ -1395,15 +1341,15 @@ for each_frame <span class="kw">in</span> video_stream:
   </table>
 
   <div class="box ok">
-    <span class="lbl">流式这一块能讲出什么（面试加分）</span>
+    <span class="lbl">流式这一块的核心设计</span>
     <p>「我用因果注意力掩码把 Transformer 改造成流式结构，保证每帧的预测只依赖历史帧，符合在线推理的物理约束。工程上用滑动窗口重算，延迟约 T/fps，文档里明确标注了这一点。分类器、归一化、滤波都是在线可算的，没有离线依赖。」</p>
     <p style="margin-top:10px">这段话信息密度高且诚实（含延迟数字），比泛泛说「支持实时」强得多。</p>
   </div>
 </section>
 
-<!-- ================= 17 ================= -->
-<section id="s17">
-  <div class="sec-head"><span class="sec-num">17</span><h2>因果注意力掩码（已实现）</h2></div>
+<!-- ================= 15 ================= -->
+<section id="s15">
+  <div class="sec-head"><span class="sec-num">15</span><h2>因果注意力掩码（已实现）</h2></div>
   <p class="lede">上一节讲的是「应该怎么做」，这一节讲「实际做出来了什么，以及踩了什么坑」。</p>
 
   <h3>实现结果</h3>
@@ -1472,15 +1418,15 @@ for each_frame <span class="kw">in</span> video_stream:
   <p>所以流式模型的 ONNX 导出走专门函数 <code class="inline">export_streaming_onnx()</code>：<b>固定窗口长度 + 只让 batch 维动态</b>。端侧推理本来就是固定窗口，这点代价可以接受。</p>
 
   <div class="box ok">
-    <span class="lbl">这一块能讲出什么（面试加分）</span>
+    <span class="lbl">这一块的核心设计</span>
     <p>「我把 Transformer 改造成因果结构，保证每帧预测只依赖历史帧。我用<b>前缀不变性</b>做验收标准 —— 不是「差不多」，是逐位相同，实测差异 0.0。实现上有个坑：掩码必须按帧号而不是 token 号算，否则同一帧的关节互相看不见。导出 ONNX 时 dynamo 导出器处理不了带掩码的 Transformer，我退到旧版导出器，序列长固定、batch 动态。」</p>
     <p style="margin-top:10px">这段话包含<b>概念（因果性）</b>、<b>验收方法（前缀不变性）</b>、<b>具体 bug（帧号 vs token 号）</b>、<b>工程妥协（ONNX 导出）</b>—— 信息密度比泛泛说「支持实时」强得多。</p>
   </div>
 </section>
 
-<!-- ================= 18 ================= -->
-<section id="s18">
-  <div class="sec-head"><span class="sec-num">18</span><h2>边界回归头（已实现）</h2></div>
+<!-- ================= 16 ================= -->
+<section id="s16">
+  <div class="sec-head"><span class="sec-num">16</span><h2>边界回归头（已实现）</h2></div>
   <p class="lede">Hysteresis 解码靠「置信度跨过阈值」判边界，天然偏晚。这一节解决「时间戳不准」的问题。</p>
 
   <h3>问题：边界为什么会偏晚</h3>
@@ -1570,14 +1516,14 @@ Softplus:  处处可导,梯度永远 > 0 → 任何输入点都能继续学</cod
   </div>
 
   <div class="box ok">
-    <span class="lbl">这一块能讲出什么（面试加分）</span>
+    <span class="lbl">这一块的核心设计</span>
     <p>「Hysteresis 判边界天然偏晚，我加了个<b>边界回归头</b>，把「这一帧是什么动作」换成了「这一帧距最近边界还有几帧」这个连续问题，输出用 Softplus 保正、损失用 L1 抗离群值。修正的时候踩过一个坑：<b>段首帧是歧义帧</b>，它可能是新段的第一帧也可能是上一段的最后一帧，两种读法数值上都合法分不出来，所以我改用段<b>内部</b>帧的<b>中位数</b>来估计边界。</p>
   </div>
 </section>
 
-<!-- ================= 19 ================= -->
-<section id="s19">
-  <div class="sec-head"><span class="sec-num">19</span><h2>双路融合 + Cross-Attention（已实现）</h2></div>
+<!-- ================= 17 ================= -->
+<section id="s17">
+  <div class="sec-head"><span class="sec-num">17</span><h2>双路融合 + Cross-Attention（已实现）</h2></div>
   <p class="lede">第 01 节说「视频路第一版全部砍掉」。这一节讲清楚为什么骨架路不够，以及砍完之后怎么优雅地加回来。</p>
 
   <h3>骨架路的致命缺点：看不到语义</h3>
@@ -1659,14 +1605,14 @@ token 粒度 = 关节 → (T*J, T*J) 掩码,同帧全连通 + 帧间因果
 底座模型是<b>关节级</b>的 → 用 (T*J, T*J) 掩码</div>
 
   <div class="box ok">
-    <span class="lbl">这一块能讲出什么（面试加分）</span>
+    <span class="lbl">这一块的核心设计</span>
     <p>「骨架路轻量、抗外观变化，但看不到语义 —— 拿杯子和拿手机骨架一样。我用 Cross-Attention 做双路融合：骨架查视频拿语义补充，视频查骨架拿几何引导，两边都保留残差连接，这样视频路认错了骨架信息还在。视频 backbone 我只留接口不塞权重，因为默认配置要守住端侧 0.11M 参数的承诺。融合后那层 Transformer 我一开始忘了加因果掩码，是靠前缀不变性测试（差异 7e-2）才揪出来的。」</p>
   </div>
 </section>
 
-<!-- ================= 20 ================= -->
-<section id="s20">
-  <div class="sec-head"><span class="sec-num">20</span><h2>自建数据集与标注工具（已实现）</h2></div>
+<!-- ================= 18 ================= -->
+<section id="s18">
+  <div class="sec-head"><span class="sec-num">18</span><h2>自建数据集与标注工具（已实现）</h2></div>
   <p class="lede">公开数据集解决不了「原子动作 + 边界标注」这两个硬需求，所以必须自建。工具解决的是「怎么高效地标」。</p>
 
   <h3>为什么公开数据集不行</h3>
@@ -1692,21 +1638,21 @@ token 粒度 = 关节 → (T*J, T*J) 掩码,同帧全连通 + 帧间因果
 
   <h3>工具链</h3>
   <pre><code><span class="cm"># ① 从视频自动抽关键点</span>
-python -m actionflow.data.annotate extract --video clips/a.mp4 --out data/a.npz
+python -m actionflow.data.annotate_cli extract --video clips/a.mp4 --out data/a.npz
 
 <span class="cm"># ② 起标注界面（tkinter,macOS 自带）</span>
-python -m actionflow.data.annotate gui --video clips/a.mp4 --npz data/a.npz \
+python -m actionflow.data.annotate_cli gui --video clips/a.mp4 --npz data/a.npz \
     --out annotations/a.json
 
 <span class="cm"># ③ 纯命令行标注（没有 GUI 时的备选）</span>
-python -m actionflow.data.annotate cli --video clips/a.mp4 --npz data/a.npz \
+python -m actionflow.data.annotate_cli cli --video clips/a.mp4 --npz data/a.npz \
     --out annotations/a.json
 
 <span class="cm"># ④ 校验标注质量</span>
-python -m actionflow.data.annotate validate --annotations annotations/ --npz-dir data/
+python -m actionflow.data.annotate_cli validate --annotations annotations/ --npz-dir data/
 
 <span class="cm"># ⑤ 导出成训练用的 npz 切片</span>
-python -m actionflow.data.annotate export --annotations annotations/ --npz-dir data/ \
+python -m actionflow.data.annotate_cli export --annotations annotations/ --npz-dir data/ \
     --out data/windows/</code></pre>
 
   <h3>标注数据格式</h3>
@@ -1763,7 +1709,7 @@ python -m actionflow.data.annotate export --annotations annotations/ --npz-dir d
   </table>
 
   <div class="box ok">
-    <span class="lbl">这一块能讲出什么（面试加分）</span>
+    <span class="lbl">这一块的核心设计</span>
     <p>「公开数据集的粒度不对 —— NTU 是复合动作，我要的是原子动作；而且没有帧级边界标注，正好是我边界回归头需要的。所以我自建了数据集。工具的关键设计是<b>关键点辅助标注</b>：用 RTMPose 自动抽，人只做修正，标一段 5 秒视频从 30 分钟降到 5 分钟。工具还会主动做质量校验 —— 类别不均衡是最常见的翻车原因，校验器会报出来。」</p>
   </div>
 </section>

@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ActionFlow 学习指南 · 从零读懂每个算法在哪个类里</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1e222d; --border:#2a2f3d;
+    --fg:#e6e9f0; --fg-dim:#9aa3b5; --fg-mute:#6b7488;
+    --accent:#5b9cff; --accent2:#7c5bff; --ok:#3ecf8e; --warn:#ffb648; --bad:#ff6b6b;
+    --mono:'SF Mono',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    font-size:15px; line-height:1.78;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px 120px}
+
+  /* ---------- Header ---------- */
+  header{
+    padding:72px 28px 52px; margin-bottom:44px;
+    background:
+      radial-gradient(900px 340px at 18% -10%, rgba(91,156,255,.22), transparent 65%),
+      radial-gradient(700px 300px at 85% 0%, rgba(124,91,255,.18), transparent 60%),
+      linear-gradient(180deg,#141824,#0f1117);
+    border-bottom:1px solid var(--border);
+  }
+  .head-inner{max-width:1120px;margin:0 auto}
+  .eyebrow{
+    font:600 11px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:18px;
+  }
+  h1{font-size:42px;line-height:1.22;margin:0 0 14px;letter-spacing:-.5px}
+  h1 .grad{
+    background:linear-gradient(92deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .tagline{font-size:18px;color:var(--fg-dim);margin:0 0 26px;max-width:800px}
+  .tagline code{background:var(--panel2);padding:2px 7px;border-radius:5px;font-size:15px;color:var(--accent)}
+  .meta-row{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{
+    background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:6px 14px;font-size:12.5px;color:var(--fg-dim);font-family:var(--mono);
+  }
+  .chip b{color:var(--fg);font-weight:600}
+
+  /* ---------- TOC ---------- */
+  nav.toc{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:22px 26px;margin-bottom:48px;
+  }
+  nav.toc h4{margin:0 0 14px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-mute);font-family:var(--mono)}
+  nav.toc ol{margin:0;padding-left:22px;columns:2;column-gap:40px;font-size:14px}
+  nav.toc li{margin-bottom:7px;break-inside:avoid}
+  nav.toc a{color:var(--fg-dim);text-decoration:none;border-bottom:1px solid transparent}
+  nav.toc a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* ---------- Sections ---------- */
+  section{margin-bottom:60px;scroll-margin-top:20px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .sec-num{
+    font:700 13px/1 var(--mono); color:var(--accent);
+    background:rgba(91,156,255,.12);border:1px solid rgba(91,156,255,.3);
+    border-radius:6px;padding:6px 9px;white-space:nowrap;
+  }
+  h2{font-size:26px;margin:0;letter-spacing:-.3px}
+  .lede{color:var(--fg-dim);margin:16px 0 24px;font-size:15.5px}
+  h3{font-size:18px;margin:34px 0 12px;color:var(--fg)}
+  h4{font-size:15px;margin:24px 0 10px;color:var(--accent);font-family:var(--mono);font-weight:600}
+
+  /* ---------- Code ---------- */
+  pre{
+    background:#0b0d13;border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:18px 20px;overflow-x:auto;margin:16px 0;
+    font-family:var(--mono);font-size:13px;line-height:1.7;color:#d7dce8;
+  }
+  pre code{font-family:inherit}
+  .kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}.num{color:#f78c6c}
+  .cm{color:#5c6478;font-style:italic}.var{color:#89ddff}
+
+  code.inline{
+    background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+    padding:1.5px 6px;font-family:var(--mono);font-size:13px;color:var(--accent);
+  }
+  code.path{
+    background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+    padding:1.5px 6px;font-family:var(--mono);font-size:12.5px;color:var(--ok);
+    word-break:break-all;
+  }
+
+  /* ---------- Tables ---------- */
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
+  th{
+    background:var(--panel2);color:var(--fg);text-align:left;
+    padding:11px 14px;font-weight:600;border-bottom:1px solid var(--border);
+    font-size:13px;letter-spacing:.02em;
+  }
+  td{padding:11px 14px;border-bottom:1px solid rgba(42,47,61,.6);vertical-align:top}
+  tbody tr:hover{background:rgba(91,156,255,.045)}
+  td code{background:rgba(91,156,255,.1);padding:1.5px 6px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:var(--accent)}
+  td .path{background:rgba(62,207,142,.1);padding:1.5px 6px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:var(--ok);word-break:break-all}
+
+  /* ---------- Callout ---------- */
+  .box{border-radius:12px;padding:18px 22px;margin:20px 0;border:1px solid var(--border);background:var(--panel)}
+  .box .lbl{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;display:block}
+  .box p{margin:0 0 8px}.box p:last-child{margin:0}
+  .box.warn{background:rgba(255,182,72,.07);border-color:rgba(255,182,72,.32)}
+  .box.warn .lbl{color:var(--warn)}
+  .box.ok{background:rgba(62,207,142,.07);border-color:rgba(62,207,142,.3)}
+  .box.ok .lbl{color:var(--ok)}
+  .box.bad{background:rgba(255,107,107,.07);border-color:rgba(255,107,107,.32)}
+  .box.bad .lbl{color:var(--bad)}
+  .box.info{background:rgba(91,156,255,.07);border-color:rgba(91,156,255,.3)}
+  .box.info .lbl{color:var(--accent)}
+
+  /* ---------- Pipeline diagram ---------- */
+  .flow{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:24px;margin:22px 0;font-family:var(--mono);font-size:13px;
+    line-height:1.9;overflow-x:auto;color:var(--fg-dim);white-space:pre;
+  }
+  .flow .hl{color:var(--accent);font-weight:600}
+  .flow .ok{color:var(--ok)}
+  .flow .w{color:var(--warn)}
+
+  /* ---------- Cards ---------- */
+  .grid{display:grid;gap:14px;margin:20px 0}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .card h5{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card h5 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+  .card p{margin:0;color:var(--fg-dim);font-size:13.5px;line-height:1.72}
+  .card .api{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);font-family:var(--mono);font-size:12px;color:var(--ok);word-break:break-all;line-height:1.8}
+
+  /* ---------- Algorithm card (核心) ---------- */
+  .algo{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:22px 24px;margin:20px 0;
+  }
+  .algo-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .algo-head h3{margin:0;font-size:19px}
+  .algo .n{
+    font:700 12px/1 var(--mono);background:rgba(91,156,255,.12);
+    border:1px solid rgba(91,156,255,.3);border-radius:6px;padding:5px 8px;color:var(--accent);
+  }
+  .algo .where{
+    font-family:var(--mono);font-size:12.5px;color:var(--ok);margin:10px 0 14px;
+    padding:9px 12px;background:rgba(62,207,142,.07);border:1px solid rgba(62,207,142,.25);border-radius:8px;
+    word-break:break-all;line-height:1.8;
+  }
+  .algo .where b{color:var(--fg)}
+  .algo dl{margin:0}
+  .algo dt{font-size:12px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-mute);margin-top:16px}
+  .algo dd{margin:5px 0 0;color:var(--fg-dim);font-size:14.5px}
+  .algo dd strong{color:var(--fg);font-weight:600}
+
+  /* ---------- Steps ---------- */
+  .steps{counter-reset:s;margin:20px 0}
+  .step{position:relative;padding-left:44px;margin-bottom:22px}
+  .step::before{
+    counter-increment:s;content:counter(s);
+    position:absolute;left:0;top:0;width:28px;height:28px;border-radius:8px;
+    background:rgba(91,156,255,.14);border:1px solid rgba(91,156,255,.35);
+    color:var(--accent);font:700 13px/28px var(--mono);text-align:center;
+  }
+  .step h4{margin:0 0 6px;font-family:inherit;font-size:15.5px;color:var(--fg)}
+  .step p{margin:0;color:var(--fg-dim);font-size:14px}
+  .step .deliver{margin-top:8px;font-family:var(--mono);font-size:12.5px;color:var(--ok)}
+
+  /* ---------- Badges ---------- */
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .badge{
+    font:600 11px/1 var(--mono);padding:6px 10px;border-radius:6px;
+    border:1px solid var(--border);background:var(--panel2);color:var(--fg-dim);
+  }
+  .badge.yours{background:rgba(62,207,142,.12);border-color:rgba(62,207,142,.35);color:var(--ok)}
+  .badge.lib{background:rgba(124,91,255,.12);border-color:rgba(124,91,255,.35);color:var(--accent2)}
+
+  .kbd{
+    font-family:var(--mono);font-size:12.5px;background:var(--panel2);
+    border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--accent);
+  }
+
+  ul,ol{padding-left:22px}
+  li{margin-bottom:7px}
+  li::marker{color:var(--fg-mute)}
+  hr{border:none;border-top:1px solid var(--border);margin:44px 0}
+
+  .foot{color:var(--fg-mute);font-size:13px;text-align:center;padding:30px 0 0;border-top:1px solid var(--border)}
+  @media (max-width:720px){
+    h1{font-size:31px} h2{font-size:22px} nav.toc ol{columns:1} .wrap{padding:0 18px 80px}
+    header{padding:48px 18px 36px}
+    .algo{padding:18px}
+  }
+  @media print{
+    body{background:#fff;color:#111} pre{background:#f6f6f6;color:#111;border-color:#ddd}
+    .box,table,.card,.flow,nav.toc,.algo{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <div class="eyebrow">Learning Guide · v1.0</div>
+    <h1>ActionFlow<br><span class="grad">学习指南</span></h1>
+    <p class="tagline">
+      这个项目一共有 <b>8 大算法</b>，分散在 9 个文件里。
+      这份文档告诉你：<b>每一个算法在哪个类、哪一行、怎么验证它是对的</b>，
+      以及<b>按什么顺序读</b>最省力。
+    </p>
+    <div class="meta-row">
+      <span class="chip"><b>算法</b> 8 个</span>
+      <span class="chip"><b>核心文件</b> 9 个</span>
+      <span class="chip"><b>测试</b> 124 个</span>
+      <span class="chip"><b>阅读时长</b> 约 3 小时</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <h4>目录</h4>
+  <ol>
+    <li><a href="#s1">先搞清楚：项目在干什么</a></li>
+    <li><a href="#s2">算法总览表（8 个）</a></li>
+    <li><a href="#s3">算法 1-3：输入侧三个手写件</a></li>
+    <li><a href="#s4">算法 4-5：模型侧两个核心件</a></li>
+    <li><a href="#s5">算法 6-8：输出侧三个手写件</a></li>
+    <li><a href="#s6">附加件：边界回归（可选架构）</a></li>
+    <li><a href="#s7">附加件：双路融合（可选架构）</a></li>
+    <li><a href="#s8">学习路线：四天读完</a></li>
+    <li><a href="#s9">怎么验证你真的懂了</a></li>
+    <li><a href="#s10">常见困惑 FAQ</a></li>
+  </ol>
+</nav>
+
+<!-- ================= 1 ================= -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>先搞清楚：项目在干什么</h2></div>
+  <p class="lede">动手读代码之前，先建立一张地图。不然后面每个文件你都不知道在解决什么问题。</p>
+
+  <div class="flow">视频流 (mp4 / 摄像头)
+   │
+   ├─ <span class="hl">【算法 0】RTMPose + SimCC 解码</span>  →  17 个关键点 (T, 17, 3)
+   │      io/pose_infer.py
+   │
+   ├─ <span class="hl">【算法 1】One-Euro Filter</span>  →  去抖（关键点不抖了）
+   │      postprocess/filters.py
+   │
+   ├─ <span class="hl">【算法 2】身体坐标系归一化</span>  →  位置/尺度/朝向无关
+   │      postprocess/normalize.py
+   │
+   ├─ <span class="hl">【算法 4】因果流式 Transformer</span>  →  逐帧类别概率 (T, C)
+   │      models/streaming.py
+   │
+   ├─ <span class="hl">【算法 6】Viterbi 动态规划</span>  ┐
+   ├─ <span class="hl">【算法 7】Hysteresis 双阈值</span>  ├→  干净的动作段
+   ├─ <span class="hl">【算法 8】最小持续时长约束</span>  ┘
+   │      postprocess/decode.py
+   │
+   └─ 输出: [{"start":0.0, "end":1.2, "label":"左举手", "confidence":0.94}, ...]</div>
+
+  <div class="box info">
+    <span class="lbl">关键心智模型</span>
+    <p><b>这个项目是三层，不是两层。</b></p>
+    <p>① <b>姿态识别</b>（算法 0）→ 每帧骨架，这是<b>几何事实</b></p>
+    <p>② <b>动作分类</b>（算法 4）→ 每帧类别，这是<b>语义标签</b></p>
+    <p>③ <b>时序解码</b>（算法 6-8）→ 动作段，这是<b>时空结构</b></p>
+    <p style="margin-top:10px">②③ 缺一不可：只有 ①② 你知道每帧是什么，但输出是碎帧、没有时间戳；
+    只有 ①③ 你能把视频切成段，但不知道每段是什么动作。</p>
+  </div>
+
+  <h3>代码地图：哪个文件放什么</h3>
+  <table>
+    <thead>
+      <tr><th style="width:26%">文件</th><th style="width:30%">核心类 / 函数</th><th>职责</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="path">actionflow/io/pose_infer.py</span></td>
+        <td><code>RTMPoseInfer</code></td>
+        <td>算法 0：RTMPose ONNX 推理 + SimCC 坐标解码</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/postprocess/filters.py</span></td>
+        <td><code>OneEuroFilter</code> / <code>SkeletonFilter</code></td>
+        <td>算法 1：关键点去抖</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/postprocess/normalize.py</span></td>
+        <td><code>normalize_keypoints</code></td>
+        <td>算法 2：身体坐标系归一化</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/models/classifier.py</span></td>
+        <td><code>SkeletonEmbedding</code> / <code>SkeletonTransformerClassifier</code></td>
+        <td>骨架嵌入 + 离线分类器（baseline）</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/models/streaming.py</span></td>
+        <td><code>build_causal_frame_mask</code> / <code>CausalStreamingClassifier</code></td>
+        <td>算法 4：因果注意力掩码 ★核心</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/models/boundary.py</span></td>
+        <td><code>BoundaryRegressionHead</code> / <code>compute_boundary_targets</code></td>
+        <td>附加件：边界回归（可选架构）</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/models/fusion.py</span></td>
+        <td><code>CrossAttentionFusion</code> / <code>FusionClassifier</code></td>
+        <td>附加件：双路融合（可选架构）</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/postprocess/decode.py</span></td>
+        <td><code>hysteresis_threshold</code> / <code>viterbi_decode</code> / <code>decode_segments</code></td>
+        <td>算法 6-8：时序解码三件套</td>
+      </tr>
+      <tr>
+        <td><span class="path">actionflow/infer/pipeline.py</span></td>
+        <td><code>ActionFlowPipeline</code></td>
+        <td>把上面所有算法串成一条流水线</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box warn">
+    <span class="lbl">⚠️ 别从 pipeline.py 开始读</span>
+    <p>它是「胶水」——把所有算法串起来。先读算法本身，
+    最后再回来看 pipeline 怎么调度它们。否则你会陷在调用链里出不来。</p>
+  </div>
+</section>
+
+<!-- ================= 2 ================= -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>算法总览表（8 个）</h2></div>
+  <p class="lede">这是整份文档最重要的一张表。建议先打印出来贴在显示器边上。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:5%">#</th>
+        <th style="width:20%">算法</th>
+        <th style="width:26%">实现位置（文件 → 类/函数）</th>
+        <th style="width:13%">难度</th>
+        <th>一句话原理</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>0</b></td>
+        <td>RTMPose + SimCC</td>
+        <td><span class="path">io/pose_infer.py</span> → <code>RTMPoseInfer._decode_simcc</code></td>
+        <td>★☆☆ 外部库</td>
+        <td>用预训练模型出关键点；SimCC 把「回归坐标」变成「分类一维坐标」</td>
+      </tr>
+      <tr>
+        <td><b>1</b></td>
+        <td><b>One-Euro Filter</b></td>
+        <td><span class="path">postprocess/filters.py</span> → <code>OneEuroFilter</code></td>
+        <td>★★☆ 手写</td>
+        <td>截止频率随速度自适应：慢时强滤波、快时弱滤波</td>
+      </tr>
+      <tr>
+        <td><b>2</b></td>
+        <td><b>身体坐标系归一化</b></td>
+        <td><span class="path">postprocess/normalize.py</span> → <code>normalize_keypoints</code></td>
+        <td>★★☆ 手写</td>
+        <td>以髋为原点、躯干为尺度、躯干向为朝向 → 与位置/体型无关</td>
+      </tr>
+      <tr>
+        <td><b>3</b></td>
+        <td>关节嵌入 + 位置编码</td>
+        <td><span class="path">models/classifier.py</span> → <code>SkeletonEmbedding</code></td>
+        <td>★☆☆ 标准</td>
+        <td>坐标投影 + 关节身份嵌入 + 时间位置嵌入，三者相加</td>
+      </tr>
+      <tr>
+        <td><b>4</b></td>
+        <td><b>因果注意力掩码</b> ★核心</td>
+        <td><span class="path">models/streaming.py</span> → <code>build_causal_frame_mask</code></td>
+        <td>★★★ 手写</td>
+        <td>每个 token 只能看「不晚于自己」的 token → 流式前缀不变</td>
+      </tr>
+      <tr>
+        <td><b>5</b></td>
+        <td>Key-Padding Mask</td>
+        <td><span class="path">models/streaming.py</span> → <code>CausalStreamingClassifier.build_masks</code></td>
+        <td>★★☆ 标准</td>
+        <td>置信度低的关节不参与注意力（处理漏检）</td>
+      </tr>
+      <tr>
+        <td><b>6</b></td>
+        <td><b>Viterbi 动态规划</b></td>
+        <td><span class="path">postprocess/decode.py</span> → <code>viterbi_decode</code></td>
+        <td>★★★ 手写</td>
+        <td>全局最优路径：治「孤立误判」</td>
+      </tr>
+      <tr>
+        <td><b>7</b></td>
+        <td><b>Hysteresis 双阈值</b></td>
+        <td><span class="path">postprocess/decode.py</span> → <code>hysteresis_threshold</code></td>
+        <td>★★☆ 手写</td>
+        <td>高阈值开段、低阈值保段：治「段被切断」</td>
+      </tr>
+      <tr>
+        <td><b>8</b></td>
+        <td>最小持续时长约束</td>
+        <td><span class="path">postprocess/decode.py</span> → <code>decode_segments</code></td>
+        <td>★☆☆ 手写</td>
+        <td>人不会做 0.03 秒的动作 → 滤除假阳性段</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="badges">
+    <span class="badge yours">手写实现 · 6 个</span>
+    <span class="badge lib">外部库封装 · 1 个</span>
+    <span class="badge">标准用法 · 2 个</span>
+  </div>
+
+  <div class="box ok">
+    <span class="lbl">如果时间有限</span>
+    <p>只读 <b>算法 4（因果掩码）</b> 和 <b>算法 6-8（解码三件套）</b>。
+    这四个是本项目「自己写出来」的部分，也是一个流式动作识别引擎的骨架。</p>
+  </div>
+</section>
+
+<!-- ================= 3 ================= -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>算法 1-3：输入侧三个手写件</h2></div>
+  <p class="lede">这三个算法都在「模型之前」，作用是把原始关键点变成模型爱吃的干净输入。</p>
+
+  <!-- 算法 1 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 1</span>
+      <h3>One-Euro Filter</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/postprocess/filters.py → <b>class OneEuroFilter</b> (第 43 行)<br>
+      <b>封装</b>：同文件 <b>class SkeletonFilter</b> (第 137 行) —— 对 17×3 个坐标各建一个滤波器
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>RTMPose 是<b>逐帧独立</b>检测的。人在站着不动时，检测出来的坐标依然会抖 ±3 像素。
+      这种抖动会让「骨长」这类几何特征剧烈变化，模型的输入分布直接崩掉。</dd>
+
+      <dt>核心公式</dt>
+      <dd>
+        <pre style="margin:8px 0">cutoff = min_cutoff + beta * |速度|
+α     = 1 / (1 + τ / (2π · cutoff))     τ = 1/dt
+
+滤波值 = α · 当前值 + (1 - α) · 上一个滤波值</pre>
+        关键在 <code>cutoff</code> 那一行：<strong>速度越快，cutoff 越高，α 越接近 1，滤波越弱</strong>。
+        慢动作时强滤波（去抖），快动作时弱滤波（不拖影）。
+      </dd>
+
+      <dt>为什么 beta 默认是 0</dt>
+      <dd>检测<b>噪声</b>本身会产生很大的表观速度。<code>beta</code> 偏大会把噪声误判成「快速运动」，
+      反而削弱滤波。实测（σ=3px 噪声下）：<code>beta=0.02</code> 只降 19% 抖动，
+      <code>beta=0.00</code> 降 37%。所以默认 0，只在确实关心「挥手不能有拖影」时才调大。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd>
+        <code>python tests/test_postprocess.py</code> —— 15 个测试里有一半是滤波的。<br>
+        最有说服力的是：喂一段带已知抖动的信号进去，检查<b>输出的抖动方差确实变小</b>，
+        同时<b>信号的形状没有变</b>（不能滤成一条直线）。
+      </dd>
+    </dl>
+  </div>
+
+  <!-- 算法 2 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 2</span>
+      <h3>身体坐标系归一化</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/postprocess/normalize.py → <b>function normalize_keypoints</b> (第 125 行)<br>
+      <b>配套</b>：<code>compute_origin</code> / <code>compute_scale</code> / <code>compute_rotation</code>（第 74/80/103 行）<br>
+      <b>批处理版</b>：<code>normalize_sequence</code> (第 171 行) —— 训练时对整段用
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>让模型学「动作」，而不是学「这个人在画面里的位置和体型」。三步：</dd>
+      <dd>
+        <pre style="margin:8px 0">步骤1  原点 = 左右髋中心 (kps[11] + kps[12]) / 2
+步骤2  尺度 = 躯干长度 = |kps[5] - kps[11]|
+步骤3  朝向 = 躯干向量归一化 → 旋转到标准朝向
+步骤4  每个关键点 p → (p - 原点) / 尺度，再旋转</pre>
+      </dd>
+
+      <dt>为什么必须做</dt>
+      <dd>
+        <ul>
+          <li>人在画面左边还是右边 → <strong>不该</strong>影响「抬左手」</li>
+          <li>身高 160 还是 190 → <strong>不该</strong>影响「抬手」</li>
+          <li>转身 90° → 旋转到标准朝向后依然能识别</li>
+        </ul>
+        不做归一化的话，同一个动作在画面不同位置会被当成不同特征，
+        训练集必须覆盖各种位置才学得会 —— 数据量直接爆炸。
+      </dd>
+
+      <dt>两个容易踩的坑</dt>
+      <dd>
+        <ul>
+          <li><strong>归一化两次</strong>：npz 里存<b>像素坐标</b>，归一化只在「喂给模型前」发生一次。
+          归一化两次 ≠ 归一化一次（两次的旋转会互相抵消，实测坐标最大差 2.9）。
+          见 <code>annotate.py::extract_keypoints</code> 里 <code>cfg.norm.enabled = False</code> 那行。</li>
+          <li><strong>尺度模式</strong>：<code>torso</code>（默认）用躯干长，
+          <code>bone_median</code> 用所有骨长的中位数，对遮挡更鲁棒。</li>
+        </ul>
+      </dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd>
+        <code>python tools/verify_pipeline.py</code> 里的「检查 2」：
+        同一段骨架，人为平移 / 缩放 / 旋转，<strong>归一化后的结果应该一模一样</strong>。
+      </dd>
+    </dl>
+  </div>
+
+  <!-- 算法 3 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 3</span>
+      <h3>关节嵌入 + 时间位置编码</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/models/classifier.py → <b>class SkeletonEmbedding</b> (第 44 行)<br>
+      <b>使用者</b>：<code>SkeletonTransformerClassifier</code> / <code>CausalStreamingClassifier</code> 共用
+    </div>
+    <dl>
+      <dt>它做什么</dt>
+      <dd>把 <code>(B, T, 17, 3)</code> 的骨架变成 Transformer 能吃的 token 序列 <code>(B, T×17, 128)</code>。
+      三样东西<b>相加</b>：</dd>
+      <dd>
+        <pre style="margin:8px 0">coord_proj (x,y,conf) → Linear(3, 128)     ← 坐标长什么样
++ joint_embed[j]     (17, 128)          ← 这是哪个关节
++ time_embed[t]      (64, 128)          ← 这是第几帧
+= reshape (B, T*17, 128)</pre>
+      </dd>
+
+      <dt>为什么需要 joint_embed</dt>
+      <dd>光有坐标，模型不知道「这个坐标是左手腕还是右膝盖」。
+      关节身份必须显式编码进去，否则「左手腕」和「右手腕」在数值上完全一样。</dd>
+
+      <dt>为什么需要 time_embed</dt>
+      <dd>告诉模型「这是序列的第几帧」。<strong>注意</strong>：推理时不能整段视频一次喂进去 ——
+      <code>time_embed</code> 是 <code>nn.Embedding(64)</code>，只覆盖 64 帧；
+      整段上千帧会直接 <code>IndexError</code>。所以推理必须按 32 帧窗口滑。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd>看 <code>tests/test_model.py</code>：
+      <code>test_build_model_from_config</code> 检查形状，
+      <code>test_backward_pass_works</code> 检查能反向传播。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= 4 ================= -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>算法 4-5：模型侧两个核心件</h2></div>
+  <p class="lede">这是整个项目最难、也最有价值的一块。读懂因果掩码，你就理解了「流式」这两个字。</p>
+
+  <!-- 算法 4 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 4</span>
+      <h3>因果注意力掩码 ★核心</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/models/streaming.py → <b>function build_causal_frame_mask</b> (第 99 行)<br>
+      <b>调用方</b>：<b>class CausalStreamingClassifier</b> → <code>build_masks</code> (第 246 行)<br>
+      <b>测试</b>：tests/test_streaming.py → 19 个测试，全是这块的
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>普通 Transformer 是「上帝视角」—— 第 3 帧能看到第 8 帧。
+      离线视频里这没问题，但<b>实时流里是致命的</b>：
+      用户已经看到的第 3 帧结果，会因为你后来又来了 5 帧而<b>偷偷改变</b>。</dd>
+
+      <dt>通俗解释</dt>
+      <dd>注意力机制就像开会，每个 token 都要听所有人发言。
+      因果掩码就是规定「<b>只能听前面的人的发言，不能听后面的</b>」——
+      这样第 3 帧的结论一旦算出来就<b>永远不会变</b>。</dd>
+
+      <dt>⚠️ 本项目最大的一个坑</dt>
+      <dd>掩码必须<b>按帧号</b>算，不能按 token 号算。</dd>
+      <dd>
+        <pre style="margin:8px 0">token 编号 = 帧号 × 关节数 + 关节编号
+
+按 token 编号做下三角掩码 → 同一帧内的 17 个关节互相看不见 ❌
+  （左手腕看不到左手肩 —— 这在物理上说不通）
+
+按帧号做掩码 → 同帧内 17 个关节互相可见，帧与帧之间才因果 ✅</pre>
+        <code>build_causal_frame_mask</code> 里就是按 <code>t_of[i] = i // num_joints</code>
+        分组的：<strong>同一帧的 token 之间 mask 全部可见，跨帧才因果</strong>。
+      </dd>
+
+      <dt>验收标准：前缀不变性</dt>
+      <dd>
+        <pre style="margin:8px 0">「用前 t 帧算出的结果」
+  必须  ==  「用前 t+100 帧算出的前 t 帧」</pre>
+        不是「差不多就行」，是<b>逐位相同</b>。实测：<code>streaming = 0.0</code>（完全一样），
+        <code>boundary &lt; 1e-5</code>，<code>fusion &lt; 1e-5</code>。<br>
+        这条测试在 <code>tests/test_streaming.py::test_prefix_invariance_exact</code>，
+        <b>任何改动破坏了它都会立刻挂掉</b>。
+      </dd>
+
+      <dt>为什么这是必须独立测的</dt>
+      <dd>因为<b>流式架构的错误在离线测试里是看不出来的</b>。
+      假设模型不小心让第 3 帧看到了第 8 帧：离线推理把整段视频喂进去，结果看着挺好、测试全绿；
+      实时推理时用户已经看到「抬手」，下一秒突然变成「站立」—— 因为新帧到了。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd>
+        <code>python tests/test_streaming.py</code> —— 19 个测试。<br>
+        最核心的一个：构造两段长度不同的输入（前 32 帧 vs 前 132 帧），
+        检查<b>前 32 帧的输出逐位相同</b>。<br>
+        另外 <code>examples/architectures.py</code> 也会现场演示这个性质。
+      </dd>
+    </dl>
+  </div>
+
+  <!-- 算法 5 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 5</span>
+      <h3>Key-Padding Mask（处理漏检）</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/models/streaming.py → <b>class CausalStreamingClassifier.build_masks</b> (第 246 行)<br>
+      <b>同类实现</b>：models/classifier.py → <code>SkeletonTransformerClassifier.build_masks</code> (第 156 行)
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>姿态模型有时会<b>漏检</b>某个关节（置信度低）。这个关节的坐标这时是垃圾值。
+      如果让它参与注意力，垃圾就会污染整段序列的判断。</dd>
+
+      <dt>怎么做</dt>
+      <dd>把置信度低于阈值（默认 0.3）的关节标记出来，
+      用 <code>src_key_padding_mask</code> 让它们<b>不参与注意力的 key</b>。</dd>
+
+      <dt>⚠️ 与 ONNX 导出冲突</dt>
+      <dd>这个 mask 会导致 dynamo 导出器崩溃
+      （<code>GuardOnDataDependentSymNode</code>），
+      因为「哪些 token 被屏蔽」是<b>数据依赖</b>的，而 dynamo 要求形状编译期确定。
+      所以导出必须用旧版导出器（<code>dynamo=False</code>）——
+      细节见 <code>models/streaming.py::export_streaming_onnx</code> 的 docstring。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd><code>tests/test_streaming.py</code> 里构造一批「某个关节置信度=0」的输入，
+      检查输出不崩、且结果合理。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= 5 ================= -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>算法 6-8：输出侧三个手写件</h2></div>
+  <p class="lede">这三个算法都在同一个文件里：<code>actionflow/postprocess/decode.py</code>。它们治三种不同的病。</p>
+
+  <div class="box info">
+    <span class="lbl">为什么必须有解码层</span>
+    <p>逐帧独立分类会产生三类错误，而三个算法各治一种：</p>
+    <p>① <b>段被劈碎</b> —— 中间一帧误判，一个连续动作被切成两段 → <b>算法 7</b> 治</p>
+    <p>② <b>孤立假阳性</b> —— 某帧置信度突增，输出一个 0.03s 的不可能动作 → <b>算法 6</b> 治</p>
+    <p>③ <b>边界抖动</b> —— 同一动作两次推理起止帧差 3~5 帧 → <b>算法 8</b> + 边界回归治</p>
+    <p style="margin-top:10px">多数开源动作识别项目只做到 Layer 2 就停了，直接把 argmax 当输出，边界全是碎的。</p>
+  </div>
+
+  <!-- 算法 6 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 6</span>
+      <h3>Viterbi 动态规划</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/postprocess/decode.py → <b>function viterbi_decode</b> (第 178 行)<br>
+      <b>平滑版</b>：<b>function viterbi_smooth_probs</b> (第 225 行) —— 实际用的是这个<br>
+      <b>转移矩阵</b>：<b>function build_transition_matrix</b> (第 151 行)<br>
+      <b>测试</b>：tests/test_decode.py
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>逐帧独立看，第 35 帧偶尔会被误判成一个完全不相干的动作，
+      把一个连续动作从中间劈成两半。Viterbi 从<b>全局</b>找一条最合理的路径，
+      把这孤立的误判拉回来。</dd>
+
+      <dt>核心公式</dt>
+      <dd>
+        <pre style="margin:8px 0">dp[t][c] = log P(c | t) + max over c' ( dp[t-1][c'] + log T(c'→c) )
+
+T(c→c) 转移概率：
+  留在同一类  stay_prob   = 0.9   （默认）
+  切到别的类  switch_prob = 0.05  （默认）</pre>
+        直观理解：一个动作不会只持续一帧就消失。所以「切到别的类」要付出代价，
+        只有<b>整体收益更高</b>时才会切。
+      </dd>
+
+      <dt>两个函数的区别（容易搞混）</dt>
+      <dd>
+        <ul>
+          <li><code>viterbi_decode</code> → 返回<b>类别序列</b>（argmax 的路径）</li>
+          <li><code>viterbi_smooth_probs</code> → 返回<b>平滑后的概率</b>（保留置信度信息）</li>
+        </ul>
+        实际解码走的是<b>后者</b>，因为后面 Hysteresis 需要连续的置信度值来跨阈值。
+      </dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd>
+        <b>最直观的验证方式</b>：<code>python -m actionflow.cli decode-test</code><br>
+        它会手工构造一段带噪声的概率序列，注入三种典型错误，然后逐层对比：
+        <ul>
+          <li>朴素 argmax → 一堆碎片（12 段）</li>
+          <li>只加 Hysteresis → 段数减少但仍有问题</li>
+          <li>加 Viterbi → 路径连续，误判被拉回</li>
+          <li>完整解码 → 干净的 4 段</li>
+        </ul>
+        这个演示是理解整个解码层的<b>最佳入口</b>，强烈建议先跑一遍。
+      </dd>
+    </dl>
+  </div>
+
+  <!-- 算法 7 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 7</span>
+      <h3>Hysteresis 双阈值（迟滞回环）</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/postprocess/decode.py → <b>function hysteresis_threshold</b> (第 69 行)<br>
+      <b>测试</b>：tests/test_decode.py
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>用<b>单一</b>阈值切段，置信度在阈值附近抖动时，段的开头结尾会跟着抖。
+      同一段视频跑两次，起止帧能差 3~5 帧。</dd>
+
+      <dt>核心机制</dt>
+      <dd>
+        <pre style="margin:8px 0">high = 0.7   置信度跨过它 → <b>开段</b>
+low  = 0.4   置信度跌到它以下 → <b>关段</b>
+
+普通阈值：  0.65 ─┬─ 0.62 ─┬─ 0.68    ← 抖成三段
+双阈值：    0.65 ┬────── 0.68          ← 一段到底</pre>
+        和 Canny 边缘检测的思路完全一样：<b>高阈值确认「有」，低阈值确认「继续有」</b>。
+      </dd>
+
+      <dt>和 Viterbi 的分工</dt>
+      <dd>Viterbi 治「孤立误判」（一次性的错），
+      Hysteresis 治「持续抖动」（边界附近的来回摆动）。
+      两者治的病不一样，不能互相替代。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd><code>python -m actionflow.cli decode-test</code> 的「【2】Hysteresis 双阈值」那一段，
+      会直接对比「朴素 argmax」和「双阈值」的段数。</dd>
+    </dl>
+  </div>
+
+  <!-- 算法 8 -->
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">算法 8</span>
+      <h3>最小持续时长约束</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/postprocess/decode.py → <b>function decode_segments</b> (第 276 行)，
+      第 3 步「最小持续时长约束」<br>
+      <b>参数</b>：<code>DecodeConfig.min_duration</code>（默认 0.3 秒）→ actionflow/core/config.py
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>某帧置信度突然飙到 0.85，会产生一个 <b>0.03 秒</b>的孤立假段。
+      但<b>人不会做 0.03 秒的动作</b> —— 这在物理上就不可能。</dd>
+
+      <dt>怎么做</dt>
+      <dd>
+        <pre style="margin:8px 0">min_frames = max(1, round(min_duration * fps))   # 0.3s @30fps = 9 帧
+丢掉所有 (end - start) &lt; min_frames 的段</pre>
+      </dd>
+
+      <dt>参数怎么调</dt>
+      <dd>
+        <ul>
+          <li>调大 → 更少假阳性，但也可能把真动作切掉（动作太短）</li>
+          <li>调小 → 更灵敏，但假阳性变多</li>
+          <li>默认 0.3 秒对「抬手」「踢腿」这种动作合适</li>
+        </ul>
+      </dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd><code>decode-test</code> 的「【4】完整解码」会注入一个 0.03s 的假阳性段，
+      看它有没有被滤掉。</dd>
+    </dl>
+  </div>
+
+  <div class="box ok">
+    <span class="lbl">decode_segments 的完整流水线</span>
+    <p>上面三个算法在 <code>decode_segments()</code> 里是<b>按顺序</b>调用的，顺序不能乱：</p>
+    <pre style="margin:10px 0 0">1. Viterbi 平滑          → 消除孤立误判
+2. Hysteresis 切段       → 得到候选段
+3. 最小持续时长约束      → 滤除假阳性段
+4. 相邻同类段合并        → 消除不必要的碎片（merge_gap，默认关）
+5. 转成带时间戳的 ActionSegment</pre>
+  </div>
+</section>
+
+<!-- ================= 6 ================= -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>附加件：边界回归（可选架构）</h2></div>
+  <p class="lede">不是默认架构，但它是「时间戳精确到帧」的关键。<code>--arch boundary</code> 启用。</p>
+
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">附加</span>
+      <h3>边界回归头</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/models/boundary.py<br>
+      → <b>class BoundaryRegressionHead</b> (第 97 行)<br>
+      → <b>class BoundaryAwareClassifier</b> (第 147 行)<br>
+      → <b>function boundary_regression_loss</b> (第 260 行)<br>
+      → <b>function compute_boundary_targets</b> (第 310 行)<br>
+      <b>解码侧</b>：postprocess/decode.py → <b>function refine_boundaries_with_regression</b> (第 375 行)<br>
+      <b>测试</b>：tests/test_boundary.py → 25 个
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>Hysteresis 解码靠「置信度跨过阈值」判定边界，天然<b>偏晚</b>：
+      动作刚开始时模型还没把握（置信度只有 0.5），要等涨过 0.7 才敢开段。</dd>
+
+      <dt>换个问法</dt>
+      <dd>
+        <table style="margin:8px 0">
+          <thead><tr><th>头</th><th>问的问题</th><th>性质</th></tr></thead>
+          <tbody>
+            <tr><td>分类头</td><td>「这一帧是<b>什么</b>动作？」</td><td>离散、粗糙</td></tr>
+            <tr><td>边界回归头</td><td>「这一帧距<b>最近的边界</b>还有几帧？」</td><td>连续、精细</td></tr>
+          </tbody>
+        </table>
+      </dd>
+
+      <dt>核心公式</dt>
+      <dd>
+        <pre style="margin:8px 0">输出两个非负距离（用 softplus 保证非负）：
+  dist_to_start[t] = 这一帧距「它所属那一段」的起点还有几帧
+  dist_to_end[t]   = 这一帧距「它所属那一段」的终点还有几帧
+
+反算边界位置：
+  起点 = t - dist_to_start[t]
+  终点 = t + dist_to_end[t] + 1        （终点是开区间）</pre>
+      </dd>
+
+      <dt>⚠️ 边界帧是「歧义帧」—— 为什么要用中位数</dt>
+      <dd>
+        假设真值是「抬手=[30,70)，站立=[70,120)」，但 Hysteresis 迟到了，把边界切在 69。
+        第 69 帧被分给了「站立」，可真值里它属于「抬手」。
+        <ul>
+          <li>按「站立」的语义读 → 距站立起点 0 帧 → 边界就在 69 ✓</li>
+          <li>按「抬手」的语义读 → 距抬手起点 39 帧 → 边界在 30 ✓</li>
+        </ul>
+        <strong>两种读法在数值上都合法</strong>，光看这一帧根本分不出来。
+        但段<b>内部</b>的每一帧都指向同一个答案 —— 抬手段内的第 40 帧说
+        「距起点 10 帧」→ 起点 = 40 − 10 = 30，句句都指向 30。
+        <pre style="margin:8px 0">所以做法是：不信门口那一帧，看屋里的人怎么说的，取多数意见（中位数）。
+一两个异常值带不偏结果。</pre>
+      </dd>
+
+      <dt>修正算法的三遍</dt>
+      <dd>
+        <pre style="margin:8px 0">第 1 遍: 对段内帧做中位数统计，估计这一段真正的起点/终点
+第 2 遍: 解决相邻段的冲突（边界是「共享资源」,谁挪了就大家都挪）
+第 3 遍: 重算置信度</pre>
+      </dd>
+
+      <dt>⚠️ 训练时的两个硬约束</dt>
+      <dd>
+        <ul>
+          <li><strong>必须有帧级标签</strong>：只有段标签的话，窗口内所有帧标签都一样，
+          算出来的「到边界的距离」全是 0 —— 学不到任何东西，还会用垃圾目标污染梯度。
+          代码里直接<b>跳过</b>边界损失。</li>
+          <li><strong>必须用绝对帧号</strong>：推理时 <code>起点 = t - dist[t]</code> 里的 <code>t</code>
+          是视频绝对帧号，所以训练目标也必须是绝对距离。见
+          <code>compute_boundary_targets</code> 的 docstring。</li>
+        </ul>
+      </dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd><code>python tests/test_boundary.py</code> —— 25 个测试。
+      重点看<b>中位数消歧</b>那个 case：构造一个「边界帧有歧义」的场景，
+      检查算法仍然能找回正确边界。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h2>附加件：双路融合（可选架构）</h2></div>
+  <p class="lede"><code>--arch fusion</code> 启用。骨架路 + 视频路 Cross-Attention。</p>
+
+  <div class="algo">
+    <div class="algo-head">
+      <span class="n">附加</span>
+      <h3>Cross-Attention 双路融合</h3>
+    </div>
+    <div class="where">
+      <b>位置</b>：actionflow/models/fusion.py<br>
+      → <b>class VideoBackbone</b> (第 120 行) —— 抽象接口<br>
+      → <b>class SimpleVideoBackbone</b> (第 154 行) —— 自带的轻量实现<br>
+      → <b>class CrossAttentionFusion</b> (第 223 行) ★核心<br>
+      → <b>class FusionClassifier</b> (第 377 行)<br>
+      <b>测试</b>：tests/test_fusion.py → 15 个
+    </div>
+    <dl>
+      <dt>它解决什么问题</dt>
+      <dd>骨架路看到的是<b>几何</b>，看不到<b>语义</b>。举几个例子：</dd>
+      <dd>
+        <ul>
+          <li>「拿起杯子」和「拿起手机」—— 手的位置一样，但手里有东西 vs 手里是空的，骨架完全一样</li>
+          <li>「开门」和「挥手」—— 手的轨迹可能相似，但门把手的有无不同</li>
+          <li>「走路」和「跑步」—— 关节角度接近，但步频、步幅不同</li>
+        </ul>
+      </dd>
+
+      <dt>融合方式</dt>
+      <dd>
+        <pre style="margin:8px 0">骨架路问视频路：「这一帧画面上有什么？」 → 得到 语义补充
+视频路问骨架路：「这个人怎么动的？」     → 得到 几何引导</pre>
+        通俗讲：Cross-Attention 就像「查字典」。骨架特征是查询词，视频特征是字典，
+        每个骨架 token 问「和我最相关的画面信息是什么」，注意力算出相关度，加权求和。
+      </dd>
+
+      <dt>关键设计：残差连接</dt>
+      <dd>
+        <pre style="margin:8px 0">融合 = 骨架原样 + 视频补充</pre>
+        即使视频路认错了（画面里有干扰物），骨架信息还在，
+        模型顶多「参考了一下错误意见」，不会彻底跑偏。
+      </dd>
+
+      <dt>VideoBackbone 是抽象接口</dt>
+      <dd>接什么都能用：</dd>
+      <dd>
+        <pre style="margin:8px 0">from torchvision.models.video import swin3d_t
+net = swin3d_t(weights="DEFAULT")   # 换成任意预训练视频 backbone</pre>
+        本仓库自带的 <code>SimpleVideoBackbone</code>（3× Conv3d）<b>只用于跑通链路和测试</b>，
+        不用于刷 SOTA。默认配置仍是骨架路（0.29M 参数，端侧可跑）。
+      </dd>
+
+      <dt>⚠️ 交叉注意力也必须加因果掩码</dt>
+      <dd>否则第 3 帧会去看第 8 帧的视频特征，一样破坏前缀不变性。
+      见 <code>fusion.py::FusionClassifier.forward</code> 里的注释。</dd>
+
+      <dt>怎么验证它是对的</dt>
+      <dd><code>python tests/test_fusion.py</code> —— 15 个测试。
+      重点：<b>融合后仍然满足前缀不变性</b>（<code>fusion &lt; 1e-5</code>）。</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ================= 8 ================= -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-num">08</span><h2>学习路线：四天读完</h2></div>
+  <p class="lede">按这个顺序读，每天的目标都是「能跑出东西」，不是「读完」。</p>
+
+  <div class="steps">
+    <div class="step">
+      <h4>Day 1 · 跑通 + 建立地图</h4>
+      <p>先把项目跑起来，看清它在干什么。不读算法。</p>
+      <div class="deliver">
+        bash scripts/demo.sh<br>
+        python -m actionflow.cli decode-test<br>
+        python examples/architectures.py
+      </div>
+    </div>
+    <div class="step">
+      <h4>Day 2 · 输入侧（算法 0-3）</h4>
+      <p>搞懂「一帧画面怎么变成模型能吃的 17×3 向量」。</p>
+      <div class="deliver">
+        io/pose_infer.py（重点看 _decode_simcc）<br>
+        postprocess/filters.py<br>
+        postprocess/normalize.py<br>
+        models/classifier.py（只看 SkeletonEmbedding）
+      </div>
+    </div>
+    <div class="step">
+      <h4>Day 3 · 模型侧（算法 4-5）★最重要</h4>
+      <p>搞懂「流式」这两个字到底意味着什么。这部分要慢下来反复读。</p>
+      <div class="deliver">
+        models/streaming.py（build_causal_frame_mask + build_masks）<br>
+        tests/test_streaming.py（19 个测试，每一个都读一遍）<br>
+        examples/architectures.py 的「前缀不变性」演示
+      </div>
+    </div>
+    <div class="step">
+      <h4>Day 4 · 输出侧（算法 6-8）+ 边界回归</h4>
+      <p>搞懂「一串逐帧概率怎么变成干净的动作段」。</p>
+      <div class="deliver">
+        postprocess/decode.py（三个算法 + decode_segments）<br>
+        models/boundary.py（可选，但时间戳精度的关键）<br>
+        tests/test_decode.py + tests/test_boundary.py
+      </div>
+    </div>
+  </div>
+
+  <div class="box warn">
+    <span class="lbl">⚠️ 三个最容易卡住的地方</span>
+    <ul>
+      <li><b>掩码按帧号不按 token 号</b> —— 不理解这一点，因果掩码怎么都写不对。
+      去看 <code>build_causal_frame_mask</code> 里的 <code>t_of</code> 那一行。</li>
+      <li><b>推理必须滑窗，不能整段喂</b> —— <code>time_embed</code> 只有 64 个位置。
+      整段上千帧会直接 <code>IndexError</code>。</li>
+      <li><b>npz 存的是像素坐标</b> —— 归一化只在喂给模型前发生一次。
+      归一化两次 ≠ 归一化一次。</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= 9 ================= -->
+<section id="s9">
+  <div class="sec-head"><span class="sec-num">09</span><h2>怎么验证你真的懂了</h2></div>
+  <p class="lede">每个算法都有一个「能自己跑的验证入口」。学会了就改改参数看输出变化。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:24%">算法</th>
+        <th style="width:38%">验证命令</th>
+        <th>你该看到什么</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>0 · RTMPose</td>
+        <td><code>python -m actionflow.cli pose --video assets/demo.mp4 --visualize out.mp4</code></td>
+        <td>画面上有骨架跟着人动</td>
+      </tr>
+      <tr>
+        <td>1 · One-Euro</td>
+        <td><code>python tools/verify_pipeline.py</code>（检查 1）</td>
+        <td>抖动降低，但信号形状不变</td>
+      </tr>
+      <tr>
+        <td>2 · 归一化</td>
+        <td><code>python tools/verify_pipeline.py</code>（检查 2）</td>
+        <td>平移/缩放/旋转后结果一致</td>
+      </tr>
+      <tr>
+        <td>3 · 嵌入</td>
+        <td><code>python tests/test_model.py</code></td>
+        <td>形状对、能反向传播</td>
+      </tr>
+      <tr>
+        <td>4 · 因果掩码 ★</td>
+        <td><code>python tests/test_streaming.py</code></td>
+        <td><b>前缀不变性差异 = 0.0</b></td>
+      </tr>
+      <tr>
+        <td>5 · Padding Mask</td>
+        <td><code>python tests/test_streaming.py</code></td>
+        <td>喂零置信度关节不崩、结果合理</td>
+      </tr>
+      <tr>
+        <td>6-8 · 解码三件套</td>
+        <td><code>python -m actionflow.cli decode-test</code></td>
+        <td><b>段数从碎片变干净</b></td>
+      </tr>
+      <tr>
+        <td>边界回归</td>
+        <td><code>python tests/test_boundary.py</code></td>
+        <td>歧义边界场景下仍能找到正确边界</td>
+      </tr>
+      <tr>
+        <td>双路融合</td>
+        <td><code>python tests/test_fusion.py</code></td>
+        <td>融合后前缀不变性仍成立</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box ok">
+    <span class="lbl">最有效的学习方式：改参数看变化</span>
+    <p>每个算法都有一段「魔数」可以调。逐个改，观察输出怎么变，比读十遍代码管用。</p>
+    <ul>
+      <li><code>DecodeConfig.high_threshold</code> 0.7 → 0.9：段会变少、误检变少</li>
+      <li><code>DecodeConfig.min_duration</code> 0.3 → 1.0：短动作被滤掉</li>
+      <li><code>FilterConfig.beta</code> 0 → 0.5：快速动作开始有拖影</li>
+      <li><code>FilterConfig.min_cutoff</code> 1.0 → 0.3：抖动更小但延迟更大</li>
+      <li><code>ModelConfig.window</code> 32 → 16：时间戳更细，但上下文更少</li>
+    </ul>
+    <p>参数全在 <code>actionflow/core/config.py</code>，一个 dataclass 集中管理。</p>
+  </div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="s10">
+  <div class="sec-head"><span class="sec-num">10</span><h2>常见困惑 FAQ</h2></div>
+
+  <h3>Q · 为什么要分三层，不能一个模型端到端出时间戳吗？</h3>
+  <p>可以，但会很难。<b>姿态层</b>是几何事实（手在哪），<b>分类层</b>是语义（这是什么动作），
+  <b>解码层</b>是时空结构（何时起止）。三层解耦的好处是：
+  ① 姿态模型现成不用训；② 分类层只需要骨架序列，数据量小得多；
+  ③ 解码层是纯算法，可以用清晰���规则把边界收拾干净，而且<b>可解释、可调</b>。</p>
+
+  <h3>Q · 因果掩码和 Key-Padding Mask 有什么区别？</h3>
+  <dd>
+    <ul>
+      <li><b>Causal Mask</b>（算法 4）：限制「时间维度」——
+      第 t 帧不能看 t 之后的帧。这是<b>流式的核心</b>。</li>
+      <li><b>Key-Padding Mask</b>（算法 5）：限制「无效数据」——
+      置信度低的关节不参与注意力。这是<b>数据质量的处理</b>。</li>
+    </ul>
+    两者是<b>叠加</b>的，不是二选一。
+  </dd>
+
+  <h3>Q · 为什么不用现成的视频模型（VideoMAE / TimeSformer）？</h3>
+  <p>三个原因：① <b>端侧算力约束</b> —— 视频模型动辄几亿参数；
+  ② <b>原子动作需要结构化可解释</b> —— 骨架直接对应关节语义；
+  ③ <b>流式因果需求</b> —— 视频模型大多需要整段输入。
+  另外骨架路在小数据下有<b>先验优势</b>：关节位置本身已经编码了大量运动信息。</p>
+
+  <h3>Q · 为什么不用 ST-GCN 这种图卷积？</h3>
+  <p>骨架确实是图结构，图卷积是合理选择。但 <b>自注意力能直接建模任意两个关节的相对关系</b>
+  （左手相对右手在哪），不依赖固定的邻接矩阵；而且并行友好、感受野更直接。
+  代价是 T² 复杂度 —— 靠 T=32 的窗口控制住。
+  两者都是这个领域的必知基线，值得对照着看。</p>
+
+  <h3>Q · `--arch` 四个架构怎么选？</h3>
+  <p>
+    <table style="margin:8px 0">
+      <thead><tr><th>arch</th><th>什么时候用</th></tr></thead>
+      <tbody>
+        <tr><td><code>offline</code></td><td>只做 baseline 对比，不上生产</td></tr>
+        <tr><td><code>streaming</code></td><td><b>默认</b>。实时 / 端侧部署</td></tr>
+        <tr><td><code>boundary</code></td><td>需要<b>更准的时间戳</b>时</td></tr>
+        <tr><td><code>fusion</code></td><td>骨架分不清的语义动作（拿杯子 vs 拿手机）</td></tr>
+      </tbody>
+    </table>
+  </p>
+
+  <h3>Q · 为什么模型只有 0.29M 参数？会不会太小了？</h3>
+  <p>不会。输入是 <b>17 个关节 × 3 个数</b>（不是像素），信息密度极高。
+  真正吃算力的是姿态提取（RTMPose，54MB），不是分类器。
+  而且分类层要处理的是「17 个点的时序运动」这种低维信号，不需要很大的模型。</p>
+
+  <h3>Q · 前缀不变性到底怎么算的？</h3>
+  <p>见 <code>tests/test_streaming.py::test_prefix_invariance_exact</code>。
+  核心就是构造两段长度不同的输入（<code>skel[:32]</code> 和 <code>skel[:132]</code>），
+  对比它们<b>前 32 帧的输出</b>是否逐位相同。
+  你可以直接打开这个测试看，它写得比文档清楚。</p>
+
+  <div class="box info">
+    <span class="lbl">延伸阅读</span>
+    <p>项目里还有一份更完整的技术方案：<code>docs/technical-plan.html</code>（18 节），
+    包含算法对比表、选型分析、每个模块的设计取舍。</p>
+    <p>本指南是「<b>在哪、怎么验证</b>」，技术方案是「<b>为什么这么设计</b>」——
+    两个配合着看。</p>
+  </div>
+</section>
+
+<div class="foot">
+  ActionFlow 学习指南 · 配套 <code>docs/technical-plan.html</code> 与 <code>README.md</code><br>
+  文档里的所有行号对应仓库当前版本 —— 代码改了这里可能会漂移，以代码为准。
+</div>
+
+</div>
+</body>
+</html>
