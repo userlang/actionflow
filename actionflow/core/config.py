@@ -150,6 +150,90 @@ class ActionFlowConfig:
         return cfg
 
 
+def _relocate_weights(cfg: ActionFlowConfig) -> ActionFlowConfig:
+    """
+    把配置里的姿态权重路径解析成本机可用的**绝对路径**。
+
+    为什么需要这一步
+    ----------------
+    ``train.py`` 每次训练都会在权重旁存一份 ``<权重>.config.json``,
+    里面记着当时生效的 pose.onnx_path。而 ``PoseConfig.onnx_path``
+    的默认值是 ``str(WEIGHTS_DIR / "rtmpose-m.onnx")`` —— 一个
+    **绝对路径**。
+
+    于是这份配置一旦离开生成它的机器就彻底失效:
+
+        "onnx_path": "/Users/jacklang/project/actionflow/weights/rtmpose-m.onnx"
+
+    别人 clone 下来用同一个权重推理,会直接报
+    ``FileNotFoundError: 找不到 ONNX 权重`` —— 而那个文件明明就在
+    ``weights/rtmpose-m.onnx``。
+
+    三种情况的处理
+    --------------
+    ① **相对路径**(写盘时存的就是这种)→ 按项目根目录还原成绝对路径。
+       不还原的话,只有在项目根目录下运行才能找到权重。
+    ② **绝对路径且本机存在** → 原样保留(用户可能指定了项目外的权重)。
+    ③ **绝对路径但本机不存在** → 尝试按「相对项目根目录」重新解释。
+       典型的场景:权重在别的机器上训练过,配置里存的是对方的绝对路径。
+
+    这样配置就能跟着权重一起在机器之间流通。
+    """
+    p = Path(cfg.pose.onnx_path)
+
+    # ① 相对路径 → 按项目根目录还原
+    if not p.is_absolute():
+        cfg.pose.onnx_path = str(PROJECT_ROOT / p)
+        return cfg
+
+    # ② 本机存在 → 原样保留
+    if p.exists():
+        return cfg
+
+    # ③ 本机不存在 → 尝试重新解释成「相对项目根目录」
+    try:
+        rel = p.relative_to(PROJECT_ROOT)
+    except ValueError:
+        rel = None
+
+    if rel is None:
+        # 路径前缀整个对不上(比如在 /Users/alice/... 下训练,
+        # 现在跑在 /home/bob/... 下)。这时退一步:
+        # 取 "weights/" 之后的部分,按本机的项目根目录重新拼。
+        parts = p.parts
+        if "weights" in parts:
+            idx = len(parts) - 1 - parts[::-1].index("weights")
+            rel = Path(*parts[idx:])
+        else:
+            # 不在本项目目录下(用户自定义的权重路径)—— 原样保留,
+            # 强行改写反而会让权重找不回来。
+            return cfg
+    cfg.pose.onnx_path = str(PROJECT_ROOT / rel)
+    return cfg
+
+
+def _portable_dict(cfg: ActionFlowConfig) -> dict[str, Any]:
+    """
+    生成可移植的配置字典 —— 绝对路径换成相对项目根目录的路径。
+
+    与 ``_relocate_weights`` 的区别:这个函数**不修改**传入的 cfg,
+    只返回一份用于写盘的副本。训练流程里 cfg 还要继续用
+    (推理时要靠它找姿态权重),不能被写盘动作顺带改掉。
+    """
+    import copy
+
+    d = copy.deepcopy(cfg.to_dict())
+    p = Path(str(d.get("pose", {}).get("onnx_path", "")))
+    if p.is_absolute():
+        try:
+            rel = p.resolve().relative_to(PROJECT_ROOT.resolve())
+        except ValueError:
+            pass  # 项目外的自定义权重,原样保留
+        else:
+            d["pose"]["onnx_path"] = str(rel)
+    return d
+
+
 def load_config(path: str | Path) -> ActionFlowConfig:
     """从 YAML/JSON 加载配置。"""
     import json
@@ -166,7 +250,7 @@ def load_config(path: str | Path) -> ActionFlowConfig:
     else:
         raw = json.loads(text)
 
-    return ActionFlowConfig.from_dict(raw)
+    return _relocate_weights(ActionFlowConfig.from_dict(raw))
 
 
 def save_config(cfg: ActionFlowConfig, path: str | Path) -> None:
@@ -174,4 +258,7 @@ def save_config(cfg: ActionFlowConfig, path: str | Path) -> None:
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(cfg.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+    # 存相对路径,让配置能跟着权重跨机器流通(见 _portable_dict)
+    path.write_text(
+        json.dumps(_portable_dict(cfg), indent=2, ensure_ascii=False), encoding="utf-8"
+    )

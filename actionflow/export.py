@@ -52,11 +52,12 @@ def main(argv: list[str] | None = None) -> int:
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    arch = getattr(cfg.model, "arch", "streaming")
+
     # ── 流式模型要用专用的导出路径 ──────────────────────────────
     # 原因见 actionflow/models/streaming.py 的 export_streaming_onnx:
     # 新版 dynamo 导出器处理不了注意力掩码,必须用旧版导出器(dynamo=False),
     # 而且窗口长度必须静态。
-    arch = getattr(cfg.model, "arch", "streaming")
     if arch in ("streaming", "boundary"):
         from actionflow.models.streaming import export_streaming_onnx
 
@@ -65,6 +66,35 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  架构: {arch}（专用导出器,窗口长度固定为 {args.window}）")
         _report_size(model, path)
         _verify_onnx(path, num_joints, args.window)
+        return 0
+
+    # ── 融合架构 ────────────────────────────────────────────────
+    # FusionClassifier 内部有 Transformer + Cross-Attention,
+    # 同样带注意力掩码 → 同样过不了 dynamo 导出器。
+    # 用旧版导出器(dynamo=False)走 trace 路径即可导出。
+    if arch == "fusion":
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                model,
+                dummy,
+                str(out_path),
+                input_names=["skel"],
+                output_names=["logits"],
+                # batch 维动态,时间维固定(掩码被烘焙成常量)
+                dynamic_axes={"skel": {0: "batch"}, "logits": {0: "batch"}},
+                opset_version=args.opset,
+                dynamo=False,  # ← 关键:掩码走不了 dynamo,见上面的说明
+                do_constant_folding=True,
+            )
+        print(f"✓ 导出成功: {out_path}")
+        print(f"  架构: {arch}（旧版导出器,窗口长度固定为 {args.window}）")
+        print("  ⚠️ 融合架构的 ONNX 只接骨架输入 —— 视频路在训练时靠")
+        print("     frames 参数喂像素,端侧部署请先用骨架路权重。")
+        _report_size(model, out_path)
+        _verify_onnx(out_path, num_joints, args.window)
         return 0
 
     dynamic_axes = {"skel": {0: "batch", 1: "time"}, "logits": {0: "batch"}}

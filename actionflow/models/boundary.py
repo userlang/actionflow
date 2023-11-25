@@ -183,6 +183,14 @@ class BoundaryAwareClassifier(nn.Module):
         self.use_boundary = use_boundary
         self.d_model = base_model.d_model
         self.num_classes = base_model.num_classes
+        # 关节数从底座模型继承。
+        # ⚠️ 必须暴露这个属性:ONNX 导出器要靠它造 dummy 输入
+        #    (1, window, num_joints, 3)。底座模型有,包装层没有的话
+        #    `export_streaming_onnx` 会报
+        #    AttributeError: 'BoundaryAwareClassifier' object has no
+        #    attribute 'num_joints' —— 也就是 --arch boundary 的模型
+        #    根本导不出去。
+        self.num_joints = base_model.num_joints
 
         # 边界头(可选)
         self.boundary_head = (

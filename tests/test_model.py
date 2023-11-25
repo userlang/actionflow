@@ -171,6 +171,57 @@ def test_onnx_export_works() -> None:
     assert buf.tell() > 0, "ONNX 导出为空"
 
 
+def test_all_archs_export_onnx() -> None:
+    """
+    四种架构都必须能导出 ONNX。
+
+    ⚠️ 这条测试是为了防住两个已经发生过的 bug:
+
+    ① **boundary 架构导不出去** ——
+       ``BoundaryAwareClassifier`` 是包装类,``num_joints`` 挂在底座的
+       ``base_model`` 上,包装层自己没有。导出器要靠它造 dummy 输入,
+       于是报 ``AttributeError: 'BoundaryAwareClassifier' object has
+       no attribute 'num_joints'``。
+       → 已修:包装层继承 ``self.num_joints = base_model.num_joints``
+
+    ② **fusion 架构导不出去** ——
+       内部有 Transformer + Cross-Attention,同样带注意力掩码,
+       新版 dynamo 导出器处理不了 → 必须 ``dynamo=False``。
+       → 已修:export.py 给 fusion 单独走旧版导出器
+
+    这两个 bug 都是「训练能跑、推理能跑、就是导不出去」的类型 ——
+    只有真正跑一遍导出才能发现,所以必须有这条回归测试。
+    """
+    import tempfile
+    from pathlib import Path
+
+    from actionflow.core.config import ActionFlowConfig
+    from actionflow.export import main as export_main
+    from actionflow.models.factory import build_model_from_config
+
+    for arch in ["offline", "streaming", "boundary", "fusion"]:
+        cfg = ActionFlowConfig()
+        cfg.model.arch = arch
+        cfg.model.num_classes = 7
+        cfg.model.d_model = 64
+        cfg.model.window = 32
+        model = build_model_from_config(cfg.model)
+        model.eval()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            pth = Path(tmp) / "m.pth"
+            onnx = Path(tmp) / "m.onnx"
+            torch.save({"model": model.state_dict(), "config": cfg.to_dict()}, pth)
+            rc = export_main([
+                "--model", str(pth),
+                "--out", str(onnx),
+                "--window", "32",
+            ])
+            assert rc == 0, f"{arch} 导出返回码 {rc}"
+            assert onnx.exists(), f"{arch} 没生成 ONNX 文件"
+            assert onnx.stat().st_size > 0, f"{arch} 导出的 ONNX 是空的"
+
+
 def _run_all() -> int:
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0
