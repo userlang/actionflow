@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ActionFlow Logo 候选</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --border:#2a2f3d;
+    --fg:#e6e9f0; --fg-dim:#9aa3b5; --fg-mute:#6b7488;
+    --accent:#5b9cff; --accent2:#7c5bff;
+    --mono:'SF Mono',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+    font-size:15px; line-height:1.75;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px 90px}
+  header{
+    padding:56px 24px 40px; margin-bottom:36px; text-align:center;
+    background:
+      radial-gradient(800px 300px at 50% -20%, rgba(91,156,255,.2), transparent 65%),
+      linear-gradient(180deg,#141824,#0f1117);
+    border-bottom:1px solid var(--border);
+  }
+  .eyebrow{font:600 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  h1{font-size:32px;margin:0 0 10px;letter-spacing:-.4px}
+  .sub{color:var(--fg-dim);margin:0;font-size:14.5px}
+
+  h2{font-size:19px;margin:40px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  h2:first-of-type{margin-top:30px}
+
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;text-align:center}
+  .card.light{background:#fff;border-color:#d0d7de}
+  .card img{width:132px;height:132px;display:block;margin:0 auto}
+  .card h3{margin:14px 0 4px;font-size:15.5px}
+  .card p{margin:0;color:var(--fg-dim);font-size:13px;line-height:1.65}
+  .light h3{color:#24292f}.light p{color:#57606a}
+  .card code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;
+    font-family:var(--mono);font-size:11.5px;color:var(--accent);word-break:break-all}
+  .light code{background:#f6f8fa;color:#0969da;border-color:#d0d7de}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
+  th{background:var(--panel2);text-align:left;padding:10px 13px;font-weight:600;border-bottom:1px solid var(--border);font-size:13px}
+  td{padding:10px 13px;border-bottom:1px solid rgba(42,47,61,.6);vertical-align:top;color:var(--fg-dim)}
+  td strong{color:var(--fg)}
+
+  .sizes{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap;margin:16px 0}
+  .sz{text-align:center}
+  .sz img{display:block;margin:0 auto}
+  .sz span{display:block;font:11px/1 var(--mono);color:var(--fg-mute);margin-top:7px}
+
+  .foot{color:var(--fg-mute);font-size:13px;text-align:center;padding:28px 0 0;border-top:1px solid var(--border);margin-top:44px}
+  @media (max-width:640px){ .wrap{padding:0 16px 60px} header{padding:36px 16px 28px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Logo Candidates</div>
+  <h1>ActionFlow Logo 候选</h1>
+  <p class="sub">四个方向 · 深色底（README）· 浅色底（文档 / 打印 / favicon 反色）</p>
+</header>
+
+<div class="wrap">
+
+<h2>A · 骨架人形</h2>
+<div class="grid">
+  <div class="card">
+    <img src="logo-a-skeleton.svg" alt="A">
+    <h3>A · 骨架人形</h3>
+    <p>人体骨架 + 抬起的手。语义最直白，一眼看出「人体姿态识别」。</p>
+    <p style="margin-top:9px"><code>assets/logo/logo-a-skeleton.svg</code></p>
+  </div>
+  <div class="card light">
+    <img src="logo-a-skeleton.svg" alt="A">
+    <h3>浅色底</h3>
+    <p>同一图形在白底上的效果。</p>
+  </div>
+</div>
+
+<h2>B · 时间轴分段</h2>
+<div class="grid">
+  <div class="card">
+    <img src="logo-b-timeline.svg" alt="B">
+    <h3>B · 时间轴分段</h3>
+    <p>上升的折线 + 三段渐变横条。抽象地表达「动作段被切分出来」。</p>
+    <p style="margin-top:9px"><code>assets/logo/logo-b-timeline.svg</code></p>
+  </div>
+  <div class="card light">
+    <img src="logo-b-timeline.svg" alt="B">
+    <h3>浅色底</h3>
+    <p>同一图形在白底上的效果。</p>
+  </div>
+</div>
+
+<h2>C · 波形时间轴</h2>
+<div class="grid">
+  <div class="card">
+    <img src="logo-c-waveform.svg" alt="C">
+    <h3>C · 波形时间轴</h3>
+    <p>关键点序列 + 概率波形 + 分段条。最贴近实际输出形态。</p>
+    <p style="margin-top:9px"><code>assets/logo/logo-c-waveform.svg</code></p>
+  </div>
+  <div class="card light">
+    <img src="logo-c-waveform.svg" alt="C">
+    <h3>浅色底</h3>
+    <p>同一图形在白底上的效果。</p>
+  </div>
+</div>
+
+<h2>D · 字母组合</h2>
+<div class="grid">
+  <div class="card">
+    <img src="logo-d-monogram.svg" alt="D">
+    <h3>D · 字母组合</h3>
+    <p>把 ActionFlow 的 A 和 F 融进一个「A」形，横条是动作段。字母感最强。</p>
+    <p style="margin-top:9px"><code>assets/logo/logo-d-monogram.svg</code></p>
+  </div>
+  <div class="card light">
+    <img src="logo-d-monogram.svg" alt="D">
+    <h3>浅色底</h3>
+    <p>同一图形在白底上的效果。</p>
+  </div>
+</div>
+
+<h2>小尺寸表现</h2>
+<p style="color:var(--fg-dim);font-size:14px">
+README 标题旁通常是 40px，Gitee/GitHub 角标是 20~32px。缩到这个尺寸时细节会大量丢失，
+所以要挑<b>轮廓简单、笔画粗</b>的那个。
+</p>
+<div class="sizes">
+  <div class="sz"><img src="logo-a-skeleton.svg" width="72"><span>72px</span></div>
+  <div class="sz"><img src="logo-b-timeline.svg" width="72"><span>72px</span></div>
+  <div class="sz"><img src="logo-c-waveform.svg" width="72"><span>72px</span></div>
+  <div class="sz"><img src="logo-d-monogram.svg" width="72"><span>72px</span></div>
+</div>
+<div class="sizes">
+  <div class="sz"><img src="logo-a-skeleton.svg" width="36"><span>36px</span></div>
+  <div class="sz"><img src="logo-b-timeline.svg" width="36"><span>36px</span></div>
+  <div class="sz"><img src="logo-c-waveform.svg" width="36"><span>36px</span></div>
+  <div class="sz"><img src="logo-d-monogram.svg" width="36"><span>36px</span></div>
+</div>
+<div class="sizes">
+  <div class="sz"><img src="logo-a-skeleton.svg" width="20"><span>20px</span></div>
+  <div class="sz"><img src="logo-b-timeline.svg" width="20"><span>20px</span></div>
+  <div class="sz"><img src="logo-c-waveform.svg" width="20"><span>20px</span></div>
+  <div class="sz"><img src="logo-d-monogram.svg" width="20"><span>20px</span></div>
+</div>
+
+<h2>对比</h2>
+<table>
+  <thead>
+    <tr><th style="width:16%">方案</th><th style="width:22%">表达的含义</th><th style="width:16%">小尺寸</th><th>取舍</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>A 骨架</strong></td>
+      <td>人体姿态</td>
+      <td>一般</td>
+      <td>最直观，但缩小后细节糊；容易和「通用姿态估计」项目混淆</td>
+    </tr>
+    <tr>
+      <td><strong>B 时间轴</strong></td>
+      <td>动作段切分</td>
+      <td><strong>好</strong></td>
+      <td>最像「logo」而不是插画；抽象但几何感强，小尺寸辨识度高</td>
+    </tr>
+    <tr>
+      <td><strong>C 波形</strong></td>
+      <td>帧级时序</td>
+      <td>一般</td>
+      <td>信息量最大，但太像数据可视化截图，不够「品牌」</td>
+    </tr>
+    <tr>
+      <td><strong>D 字母</strong></td>
+      <td>品牌首字母</td>
+      <td><strong>最好</strong></td>
+      <td>字母感最强、最像正式开源项目；和项目名的联系需要一点解释</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="foot">
+  ActionFlow · logo 候选方案 · 纯 SVG，无外部依赖，可任意缩放
+</div>
+
+</div>
+</body>
+</html>
