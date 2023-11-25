@@ -170,7 +170,7 @@ def labels_in_order(label_to_id: dict[str, int]) -> list[str]:
 def build_split(
     npz_dir: str | Path,
     out_dir: str | Path,
-    subject_of: "callable | None" = None,
+    subject_of: callable | None = None,
     val_ratio: float = 0.2,
 ) -> dict[str, int]:
     """

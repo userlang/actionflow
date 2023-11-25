@@ -29,7 +29,6 @@ ActionFlow Pipeline — 端到端推理管线
 
 from __future__ import annotations
 
-import time
 from collections import deque
 from pathlib import Path
 
@@ -360,33 +359,3 @@ class ActionFlowPipeline:
                     yield seg
 
         src.release()
-
-
-# ===========================================================================
-# 计时工具
-# ===========================================================================
-class Timer:
-    """简单的耗时统计。"""
-
-    def __init__(self) -> None:
-        self.stages: dict[str, float] = {}
-        self._t0 = 0.0
-
-    def __enter__(self) -> Timer:
-        self._t0 = time.perf_counter()
-        return self
-
-    def __exit__(self, *exc) -> None:
-        pass
-
-    def mark(self, name: str) -> None:
-        now = time.perf_counter()
-        self.stages[name] = self.stages.get(name, 0.0) + (now - self._t0)
-        self._t0 = now
-
-    def report(self) -> str:
-        total = sum(self.stages.values()) or 1e-9
-        lines = [f"总耗时: {total*1000:.1f} ms"]
-        for k, v in self.stages.items():
-            lines.append(f"  {k:20s} {v*1000:8.2f} ms  ({v/total*100:5.1f}%)")
-        return "\n".join(lines)

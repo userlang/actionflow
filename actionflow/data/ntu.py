@@ -145,15 +145,6 @@ def ntu25_to_coco17(ntu: np.ndarray) -> np.ndarray:
     return out
 
 
-def ntu25_to_coco17_xy(ntu: np.ndarray) -> np.ndarray:
-    """
-    NTU 25 关节 → COCO 17 关节，只保留 x, y。
-
-    用于把 NTU 的 3D 投影成 2D，与 RTMPose 的输出格式对齐。
-    """
-    return ntu25_to_coco17(ntu)[:, :, :2]
-
-
 def parse_label_from_path(path: str | Path) -> int:
     """
     从文件名解析类别 id。

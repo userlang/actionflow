@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 from actionflow.core.constants import KEYPOINT_NAMES, SKELETON_EDGES
@@ -26,6 +28,84 @@ def _conf_color(conf: float) -> tuple[int, int, int]:
     if conf >= 0.4:
         return (0, 200, 255)
     return (0, 0, 255)
+
+
+# macOS 上的中文字体候选 —— cv2.putText 不认中文(会画成 ???),
+# 带中文标签的 HUD 必须走 PIL 渲染。按优先级探测,取第一个存在的。
+_CJK_FONT_CANDIDATES = [
+    "/System/Library/Fonts/PingFang.ttc",
+    "/System/Library/Fonts/STHeiti Medium.ttc",
+    "/System/Library/Fonts/Hiragino Sans GB.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
+    # Linux 常见兜底
+    "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+]
+_FONT_CACHE: dict[int, object] = {}
+
+
+def _load_cjk_font(size: int):
+    """加载(并缓存)指定字号的中文字体;找不到返回 None。"""
+    if size in _FONT_CACHE:
+        return _FONT_CACHE[size]
+    font = None
+    try:
+        from PIL import ImageFont
+
+        for path in _CJK_FONT_CANDIDATES:
+            if Path(path).exists():
+                font = ImageFont.truetype(path, size)
+                break
+    except Exception:  # noqa: BLE001  PIL 没装或字体损坏都不该让画面崩
+        font = None
+    _FONT_CACHE[size] = font
+    return font
+
+
+def draw_text(
+    frame: np.ndarray,
+    text: str,
+    org: tuple[int, int],
+    font_size: int = 22,
+    color_bgr: tuple[int, int, int] = (255, 255, 255),
+) -> np.ndarray:
+    """
+    在帧上画一行文字,**支持中文**。
+
+    优先用 PIL(能渲染中文);PIL 或中文字体不可用时退回 cv2.putText
+    (英文/数字照常,中文会显示成方块,但不崩)。org 是文字左下角基线位置。
+    颜色用 BGR(和 OpenCV 一致),内部转 RGB 喂给 PIL。
+    """
+    import cv2
+
+    font = _load_cjk_font(font_size)
+    if font is None:
+        scale = font_size / 36.0
+        cv2.putText(
+            frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale,
+            color_bgr, 1, cv2.LINE_AA,
+        )
+        return frame
+
+    from PIL import Image, ImageDraw
+
+    rgb = (color_bgr[2], color_bgr[1], color_bgr[0])
+    # 只渲染文字包围的小区域,不做整帧 BGR↔RGB 往返 ——
+    # 实测整帧往返 ~25ms/行,实时播放会被拖垮。
+    h, w = frame.shape[:2]
+    x = max(org[0], 0)
+    y = max(org[1] - font_size, 0)
+    # 估算文本尺寸:中文每字≈字号宽,英文≈0.55;取保守上限再裁剪到画面
+    est_w = int(len(text) * font_size * 1.1) + 4
+    x2 = min(x + est_w, w)
+    y2 = min(y + font_size + 6, h)
+    if x2 <= x or y2 <= y:
+        return frame
+    roi = frame[y:y2, x:x2]
+    img = Image.fromarray(cv2.cvtColor(roi, cv2.COLOR_BGR2RGB))
+    ImageDraw.Draw(img).text((0, 0), text, font=font, fill=rgb)
+    frame[y:y2, x:x2] = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
+    return frame
+
 
 
 def draw_skeleton(
@@ -134,9 +214,9 @@ def draw_action_bar(
 
         name = labels[seg.label_id] if labels and seg.label_id < len(labels) else str(seg.label_id)
         if ex - sx > 30:
-            cv2.putText(
-                frame, name[:6], (sx + 3, y0 + bar_height - 7),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 0), 1, cv2.LINE_AA,
+            draw_text(
+                frame, name[:6], (sx + 3, y0 + bar_height - 6),
+                font_size=13, color_bgr=(0, 0, 0),
             )
 
     # 当前播放位置

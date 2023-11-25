@@ -211,9 +211,13 @@ def _build_annotated_loaders(args: argparse.Namespace) -> tuple:
         tr = sp / "train.txt"
         te = sp / "test.txt"
         if tr.exists():
-            train_files = [l.strip() for l in tr.read_text(encoding="utf-8").splitlines() if l.strip()]
+            train_files = [
+                ln.strip() for ln in tr.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
         if te.exists():
-            test_files = [l.strip() for l in te.read_text(encoding="utf-8").splitlines() if l.strip()]
+            test_files = [
+                ln.strip() for ln in te.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
 
     # ── 只有 1 个人时的兜底 ──────────────────────────────────────
     # build_split 是按「人」划分的,单人数据集会得到空的 test.txt。
