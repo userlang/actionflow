@@ -205,7 +205,7 @@ Hysteresis 双阈值 → 治「段被切断」（迟滞回环，同 Canny 边缘
 **不需要**任何权重、不需要数据集、不需要网络。
 
 ```bash
-git clone https://gitee.com/<你的用户名>/actionflow.git
+git clone https://gitee.com/lang_junnan_admin/actionflow.git
 cd actionflow
 
 python3 -m venv .venv
