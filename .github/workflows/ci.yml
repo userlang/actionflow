@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all]"
+          pip install ruff
+
+      - name: Lint
+        run: ruff check actionflow/ tests/ tools/ examples/ scripts/
+
+      - name: Unit tests
+        run: python -m pytest tests/ -q
+
+      # 这一步不需要任何权重、不需要数据集、不需要网络,
+      # 验证「clone 下来就能跑」这条底线。
+      - name: End-to-end smoke test
+        run: bash scripts/demo.sh
+
+      - name: Verify package imports
+        run: python -c "import actionflow; print(actionflow.__version__)"

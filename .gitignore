@@ -1,37 +1,59 @@
-# Python
+# ── Python ──────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 build/
 dist/
 .venv/
 venv/
+env/
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
+.coverage
+htmlcov/
 
-# 权重与数据
+# ── 权重与数据 ───────────────────────────────────────────────────────
+# ⚠️ 权重和数据都不进仓库 ——
+#    仓库只带一个 28KB 的 mock 模型,让人不用下载就能跑通流水线。
 weights/*.onnx
 weights/*.pth
 weights/*.pt
+weights/*.ckpt
+
+# 训练产物:权重旁的配置/历史 sidecar 也属于个人实验产物
+weights/*.config.json
+weights/*.history.json
+
 # ⚠️ 必须写 /data/ —— 不带斜杠的 data/ 会连源码包 actionflow/data/ 一起忽略
 /data/
 *.npz
+*.mp4
+*.avi
+*.mov
+*.jsonl
 
 # 但 mock 姿态模型要入库（28KB，让人不下载权重也能跑通流水线）
 !weights/mock-pose.onnx
 !weights/mock-pose.onnx.data
 
-# 输出
+# ── 输出 ────────────────────────────────────────────────────────────
 output/
 logs/
-*.mp4
-*.avi
+*.log
 
 # 但演示素材要入库（否则别人 clone 下来跑不了 demo）
 !assets/demo.mp4
 
-# IDE
+# ── IDE / 编辑器 ─────────────────────────────────────────────────────
 .idea/
 .vscode/
+*.swp
 .DS_Store
+Thumbs.db
+
+# ── 操作系统 ────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LS_OVERLAY

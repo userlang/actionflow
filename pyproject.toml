@@ -5,23 +5,34 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "actionflow"
 version = "0.1.0"
-description = "流式人体原子动作识别引擎 — 视频 → 带时间戳的结构化动作序列"
+description = "端侧流式人体原子动作识别引擎 — 视频 → 带精确时间戳的结构化动作序列"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "Apache-2.0" }
+# SPDX 表达式（比老的 license={text=...} 更规范，2027-02 前需要迁移）
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "ActionFlow Contributors" }]
-keywords = ["pose-estimation", "action-recognition", "temporal-segmentation", "onnx"]
+keywords = [
+    "pose-estimation",
+    "action-recognition",
+    "temporal-action-localization",
+    "streaming",
+    "skeleton",
+    "onnx",
+    "edge-ai",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Image Recognition",
 ]
 
 dependencies = [
@@ -48,15 +59,20 @@ all = [
     "pyyaml>=6.0",
     "pillow>=9.0",
     "pytest>=7.0",
+    "ruff>=0.1",
 ]
 
 [project.scripts]
 actionflow = "actionflow.cli:main"
+actionflow-evaluate = "actionflow.evaluate:main"
 
+# ⚠️ 换成你自己的仓库地址后再发布。
+#    Gitee: https://gitee.com/<你的用户名>/actionflow
 [project.urls]
-Homepage = "https://github.com/your-org/actionflow"
-Documentation = "https://github.com/your-org/actionflow/blob/main/docs/technical-plan.html"
-Issues = "https://github.com/your-org/actionflow/issues"
+Homepage = "https://gitee.com/your-org/actionflow"
+Documentation = "https://gitee.com/your-org/actionflow/blob/main/docs/learning-guide.html"
+Issues = "https://gitee.com/your-org/actionflow/issues"
+Changelog = "https://gitee.com/your-org/actionflow/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["actionflow*"]

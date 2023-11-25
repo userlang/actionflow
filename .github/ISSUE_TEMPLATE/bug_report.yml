@@ -1,0 +1,75 @@
+name: Bug 报告
+description: 报告一个复现的问题
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填全下面的信息，这能帮我们快速定位。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 描述你期望的行为 vs 实际的行为
+      placeholder: |
+        期望：...
+        实际：...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 完整的命令序列
+      render: bash
+      placeholder: |
+        python -m actionflow.cli infer \
+          --video data/clips/s01_a.mp4 \
+          --model weights/my_action.pth
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: 错误输出
+      description: 完整的报错堆栈
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: ActionFlow 版本
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: arch
+    attributes:
+      label: 使用的模型架构
+      options:
+        - streaming
+        - boundary
+        - offline
+        - fusion
+        - 不确定 / 其他
+    validations:
+      required: false
+
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境
+      description: 操作系统、Python 版本、CPU/GPU
+      render: shell
+      placeholder: |
+        OS: macOS 15.0
+        Python: 3.12
+        Device: CPU / CUDA 12.1
+    validations:
+      required: false
